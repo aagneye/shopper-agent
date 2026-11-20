@@ -1,0 +1,136 @@
+{
+  "format": "nearshelf-places/v1",
+  "note": "Demo data. Neem Chowk and every place, licence and verification in it are fictional.",
+  "area": {
+    "id": "neem-chowk",
+    "name": "Neem Chowk",
+    "timezone": "Asia/Kolkata"
+  },
+  "updated": "2026-11-20",
+  "spots": [
+    { "id": "metro-gate", "name": "Neem Chowk Metro, Gate 2", "lat": 28.6000, "lng": 77.2000 },
+    { "id": "gulmohar", "name": "Gulmohar Park Society", "lat": 28.6045, "lng": 77.1960 },
+    { "id": "bus-stand", "name": "Old Bus Stand", "lat": 28.5955, "lng": 77.2055 }
+  ],
+  "places": [
+    {
+      "id": "shanti_medical",
+      "name": "Shanti Medical",
+      "category": "pharmacy",
+      "address": "14 Gandhi Road, Neem Chowk",
+      "lat": 28.6012,
+      "lng": 77.2016,
+      "hours": {
+        "mon": [["09:00", "23:00"]],
+        "tue": [["09:00", "23:00"]],
+        "wed": [["09:00", "23:00"]],
+        "thu": [["09:00", "23:00"]],
+        "fri": [["09:00", "23:00"]],
+        "sat": [["09:00", "23:00"]],
+        "sun": [["10:00", "23:00"]]
+      },
+      "verified": { "by": "Neem Chowk Chemists' Association (demo)", "ref": "DL-NC-0142 (demo)" },
+      "agent": { "network": "http://localhost:8081/shanti_medical", "label": "Shanti Medical" },
+      "page": "http://localhost:8081/"
+    },
+    {
+      "id": "night_owl_pharmacy",
+      "name": "Night Owl Pharmacy",
+      "category": "pharmacy",
+      "address": "2 Station Road, Neem Chowk",
+      "lat": 28.5978,
+      "lng": 77.2031,
+      "hours": {
+        "mon": [["00:00", "24:00"]],
+        "tue": [["00:00", "24:00"]],
+        "wed": [["00:00", "24:00"]],
+        "thu": [["00:00", "24:00"]],
+        "fri": [["00:00", "24:00"]],
+        "sat": [["00:00", "24:00"]],
+        "sun": [["00:00", "24:00"]]
+      },
+      "verified": { "by": "Neem Chowk Chemists' Association (demo)", "ref": "DL-NC-0177 (demo)" },
+      "agent": { "network": "http://[::1]:8082/night_owl_pharmacy", "label": "Night Owl Pharmacy" },
+      "page": "http://[::1]:8082/"
+    },
+    {
+      "id": "jeevan_chemist",
+      "name": "Jeevan Chemist",
+      "category": "pharmacy",
+      "address": "Shop 5, Gulmohar Market, Neem Chowk",
+      "lat": 28.6041,
+      "lng": 77.1972,
+      "hours": {
+        "mon": [["08:30", "21:00"]],
+        "tue": [["08:30", "21:00"]],
+        "wed": [["08:30", "21:00"]],
+        "thu": [["08:30", "21:00"]],
+        "fri": [["08:30", "21:00"]],
+        "sat": [["08:30", "21:00"]],
+        "sun": [["09:00", "14:00"]]
+      },
+      "verified": { "by": "Neem Chowk Chemists' Association (demo)", "ref": "DL-NC-0093 (demo)" },
+      "agent": { "network": "http://localhost:8083/jeevan_chemist", "label": "Jeevan Chemist" },
+      "page": "http://localhost:8083/"
+    },
+    {
+      "id": "bharat_auto_spares",
+      "name": "Bharat Auto Spares",
+      "category": "auto_parts",
+      "address": "Motor Market, Lane 3, Neem Chowk",
+      "lat": 28.5949,
+      "lng": 77.2071,
+      "hours": {
+        "mon": [["10:00", "20:00"]],
+        "tue": [["10:00", "20:00"]],
+        "wed": [["10:00", "20:00"]],
+        "thu": [["10:00", "20:00"]],
+        "fri": [["10:00", "20:00"]],
+        "sat": [["10:00", "20:00"]]
+      },
+      "verified": { "by": "Neem Chowk Traders' Association (demo)", "ref": "GST-NC-2219 (demo)" },
+      "agent": { "network": "http://localhost:8084/bharat_auto_spares", "label": "Bharat Auto Spares" },
+      "page": "http://localhost:8084/"
+    },
+    {
+      "id": "speedline_moto_parts",
+      "name": "Speedline Moto Parts",
+      "category": "auto_parts",
+      "address": "Ring Road Service Lane, Neem Chowk",
+      "lat": 28.6071,
+      "lng": 77.2086,
+      "hours": {
+        "mon": [["09:30", "21:30"]],
+        "tue": [["09:30", "21:30"]],
+        "wed": [["09:30", "21:30"]],
+        "thu": [["09:30", "21:30"]],
+        "fri": [["09:30", "21:30"]],
+        "sat": [["09:30", "21:30"]],
+        "sun": [["09:30", "21:30"]]
+      },
+      "verified": { "by": "Neem Chowk Traders' Association (demo)", "ref": "GST-NC-2384 (demo)" },
+      "agent": { "network": "http://[::1]:8085/speedline_moto_parts", "label": "Speedline Moto Parts" },
+      "page": "http://[::1]:8085/"
+    },
+    {
+      "id": "vayu_parts_catalogue",
+      "name": "Vayu Parts Catalogue",
+      "category": "parts_catalogue",
+      "address": "Online catalogue",
+      "lat": null,
+      "lng": null,
+      "hours": {
+        "mon": [["00:00", "24:00"]],
+        "tue": [["00:00", "24:00"]],
+        "wed": [["00:00", "24:00"]],
+        "thu": [["00:00", "24:00"]],
+        "fri": [["00:00", "24:00"]],
+        "sat": [["00:00", "24:00"]],
+        "sun": [["00:00", "24:00"]]
+      },
+      "verified": { "by": "Vayu Motors (demo maker)", "ref": "Official parts catalogue (demo)" },
+      "agent": { "network": "http://[::1]:8086/vayu_parts_catalogue", "label": "Vayu Parts Catalogue" },
+      "page": "http://[::1]:8086/"
+    }
+  ]
+}
