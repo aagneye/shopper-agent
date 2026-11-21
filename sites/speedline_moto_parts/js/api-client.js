@@ -61,6 +61,11 @@ export class ApiClient {
     return this.transport("POST", "/api/sale", null, { itemId, qty });
   }
 
+  /** Whether the shop would hold an item now, before anyone's details are asked. */
+  checkHold(itemId, qty) {
+    return this.transport("GET", "/api/holds/check", { itemId, qty: String(qty) }, null);
+  }
+
   /** Hold items for pickup, with the shopper's own details. */
   createHold(details) {
     return this.transport("POST", "/api/holds", null, details);

@@ -10,9 +10,10 @@ export class HoldForm {
   /**
    * Build the form in a container and start waiting for the visitor.
    *
-   * :param options: {doc, container, api, item (a catalog entry), qty, intro (text or null)}.
+   * :param options: {doc, container, api, item (a catalog entry), qty, intro (text or
+   *   null), until (when the hold would end, from the shop's check, or null)}.
    */
-  constructor({ doc, container, api, item, qty, intro }) {
+  constructor({ doc, container, api, item, qty, intro, until = null }) {
     this.doc = doc;
     this.container = container;
     this.api = api;
@@ -22,15 +23,16 @@ export class HoldForm {
     this.result = new Promise((resolve) => {
       this.resolve = resolve;
     });
-    this.build(intro);
+    this.build(intro, until);
   }
 
   /**
    * Draw the form: what is held, the visitor's details, and the two buttons.
    *
    * :param intro: A line about who asked, or null on the shop's own page.
+   * :param until: When the hold would end, or null.
    */
-  build(intro) {
+  build(intro, until) {
     const doc = this.doc;
     const form = el(doc, "form", "hold-form");
     form.id = "hold-form";
@@ -39,6 +41,9 @@ export class HoldForm {
       el(doc, "h2", "", `Hold ${this.qty} × ${this.item.name}`),
       el(doc, "p", "hold-summary", [this.item.detail, this.item.price].filter(Boolean).join(" · ")),
     ];
+    if (until) {
+      parts.push(el(doc, "p", "hold-until", `Held until ${until}. Pay and pick it up at the counter.`));
+    }
     if (this.item.schedule === "H" || this.item.schedule === "H1") {
       parts.push(el(doc, "p", "hold-note", "Prescription medicine: bring the prescription. The pharmacist checks it at the counter."));
     }

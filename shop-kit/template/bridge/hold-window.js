@@ -30,19 +30,26 @@ export class HoldWindow {
   }
 
   /**
-   * Check the request with the shop's rules, then show the form in this window.
+   * Check the request with the shop's live rules, then show the form in this window. A
+   * refusal comes back before the form opens, so nobody types details for nothing.
    *
    * :param args: The validated request {itemId, qty}.
    * :param context: The bridge's call details, with the calling site's origin.
-   * :return: A refusal now, or a promise of the result or the visitor's cancel.
+   * :return: A promise of the refusal, the hold, or the visitor's cancel.
    */
-  static start(args, context) {
+  static async start(args, context) {
     const item = catalog.find((entry) => entry.id === args.itemId);
     if (!item) {
       return { ok: false, reason: "That item is not sold here." };
     }
-    if (item.schedule === "X") {
-      return { ok: false, reason: "This medicine cannot be held. Ask the pharmacist in person." };
+    let check;
+    try {
+      check = await shopApi.checkHold(item.id, args.qty);
+    } catch {
+      return { ok: false, reason: "The shop's stock service did not answer, so nothing was held." };
+    }
+    if (!check.ok) {
+      return { ok: false, reason: check.reason };
     }
     document.title = `Hold at ${shop.name}`;
     const sheet = document.createElement("link");
@@ -61,6 +68,7 @@ export class HoldWindow {
       api: shopApi,
       item,
       qty: args.qty,
+      until: check.until,
       intro: `The assistant on ${HoldWindow.hostOf(context?.callerOrigin)} asked ${shop.name} to hold this for you. Type your details here, not in the chat: its chat gets only the hold code.`,
     });
     return form.result;

@@ -172,17 +172,67 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
+   * The shop's own rules for holding an item, without the shopper's details: it exists,
+   * the amount is allowed, it is not Schedule X, the shop is open and enough is free.
+   *
+   * :param state: The shop's state.
+   * :param itemId: The item's id.
+   * :param qty: How many to hold.
+   * :return: {refusal} when the shop refuses, or {item, untilDate, until, prescription}.
+   */
+  function holdRules(state, itemId, qty) {
+    const item = state.items.find((entry) => entry.id === itemId);
+    if (!item) {
+      return { refusal: refuse("itemId", "That item is not sold here.") };
+    }
+    if (!Number.isInteger(qty) || qty < 1 || qty > MOST_PER_HOLD) {
+      return { refusal: refuse("qty", `Hold 1 to ${MOST_PER_HOLD} at a time.`) };
+    }
+    if (item.schedule === "X") {
+      return { refusal: refuse("itemId", "This medicine cannot be held. Ask the pharmacist in person.") };
+    }
+    const today = now();
+    const open = openState(profile.hours, today);
+    if (!open.open) {
+      return { refusal: refuse("itemId", `The shop is closed now, ${open.label.replace(/^closed, /, "")}. Holds are taken while it is open.`) };
+    }
+    const available = item.qty - heldOf(state, item.id);
+    if (qty > available) {
+      return { refusal: refuse("qty", available <= 0 ? "None left to hold." : `Only ${available} left to hold.`) };
+    }
+    const minutes = open.label === "open 24 hours" ? ALL_DAY_HOLD_MINUTES : minutesUntilClose(profile.hours, today);
+    const untilDate = new Date(clock().getTime() + minutes * 60000);
+    return {
+      item,
+      untilDate,
+      until: areaNow(untilDate, profile.timezone, null).time,
+      prescription: holdKind(item, available) === "prescription",
+    };
+  }
+
+  /**
+   * GET /api/holds/check?itemId=&qty=: would the shop hold this? Changes nothing, so the
+   * hold form can give the shop's reason before it asks for anyone's details.
+   */
+  async function checkHold({ query }) {
+    const state = await store.get();
+    const rules = holdRules(state, String(query.itemId ?? ""), Number(query.qty ?? 1));
+    if (rules.refusal) {
+      return rules.refusal;
+    }
+    return { status: 200, body: { ok: true, until: rules.until, prescription: rules.prescription } };
+  }
+
+  /**
    * POST /api/holds {itemId, qty, name, phone}: hold items for pickup until closing.
-   * The shopper's details stay here; the answer has only the code and what is held.
+   * The shop's rules for the item come first, then the shopper's details, which stay
+   * here; the answer has only the code and what is held.
    */
   async function createHold({ body }) {
     const state = await store.get();
-    const item = state.items.find((entry) => entry.id === body.itemId);
-    if (!item) {
-      return refuse("itemId", "That item is not sold here.");
-    }
-    if (!Number.isInteger(body.qty) || body.qty < 1 || body.qty > MOST_PER_HOLD) {
-      return refuse("qty", `Hold 1 to ${MOST_PER_HOLD} at a time.`);
+    const rules = holdRules(state, body.itemId, body.qty);
+    if (rules.refusal) {
+      return rules.refusal;
     }
     const name = clean(body.name);
     if (name.length < 2 || name.length > 60) {
@@ -192,21 +242,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     if (!phone) {
       return refuse("phone", "Enter a 10-digit mobile number.");
     }
-    if (item.schedule === "X") {
-      return refuse("itemId", "This medicine cannot be held. Ask the pharmacist in person.");
-    }
-    const today = now();
-    const open = openState(profile.hours, today);
-    if (!open.open) {
-      return refuse("itemId", `The shop is closed now, ${open.label.replace(/^closed, /, "")}. Holds are taken while it is open.`);
-    }
-    const available = item.qty - heldOf(state, item.id);
-    if (body.qty > available) {
-      return refuse("qty", available <= 0 ? "None left to hold." : `Only ${available} left to hold.`);
-    }
-    const minutes = open.label === "open 24 hours" ? ALL_DAY_HOLD_MINUTES : minutesUntilClose(profile.hours, today);
-    const untilDate = new Date(clock().getTime() + minutes * 60000);
-    const until = areaNow(untilDate, profile.timezone, null).time;
+    const { item, untilDate, until, prescription } = rules;
     const code = newCode(state);
     state.holds.push({
       code,
@@ -221,7 +257,6 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     });
     state.holds.splice(0, Math.max(0, state.holds.length - MOST_LOGGED));
     await store.set(state);
-    const prescription = holdKind(item, available) === "prescription";
     const what = `${body.qty} × ${item.name}${item.detail ? ` (${item.detail})` : ""}`;
     return {
       status: 200,
@@ -310,6 +345,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     "/api/stock/all": { GET: stockAll },
     "/api/sale": { POST: sale },
     "/api/holds": { GET: listHolds, POST: createHold },
+    "/api/holds/check": { GET: checkHold },
     "/api/missed": { GET: listMissed },
     "/api/reset": { POST: reset },
   };

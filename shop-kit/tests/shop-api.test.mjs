@@ -136,6 +136,26 @@ test("names and phone numbers never reach stock or missed answers, and are maske
   }
 });
 
+test("a hold check gives the shop's reason before any details are asked, and changes nothing", async () => {
+  const { api } = await shop("shanti_medical", { extraCsvRows: "SM-X01,Controlled Tablets,Testamine,1 mg,strip of 10,X,10,5" });
+  assert.deepEqual((await get(api, "/api/holds/check", { itemId: "SM-1001", qty: "1" })).body, { ok: true, until: "11:00 pm", prescription: false });
+  assert.deepEqual((await get(api, "/api/holds/check", { itemId: "SM-1008", qty: "1" })).body, { ok: false, field: "qty", reason: "None left to hold." });
+  assert.equal((await get(api, "/api/holds/check", { itemId: "SM-X01", qty: "1" })).body.field, "itemId");
+  assert.equal((await get(api, "/api/holds/check", { itemId: "SM-1005", qty: "1" })).body.prescription, true);
+  assert.deepEqual((await get(api, "/api/holds")).body.holds, []);
+  assert.deepEqual((await get(api, "/api/missed")).body.missed, []);
+  const closed = (await shop("jeevan_chemist")).api;
+  const answer = (await get(closed, "/api/holds/check", { itemId: "JC-302", qty: "1" })).body;
+  assert.equal(answer.ok, false);
+  assert.match(answer.reason, /closed now/);
+});
+
+test("a hold refused for the item says so before checking the details", async () => {
+  const { api } = await shop("shanti_medical");
+  const { body } = await post(api, "/api/holds", { itemId: "SM-1008", qty: 1, name: "", phone: "" });
+  assert.deepEqual(body, { ok: false, field: "qty", reason: "None left to hold." });
+});
+
 test("a 24-hour shop holds for two hours", async () => {
   const { api } = await shop("night_owl_pharmacy");
   const { body } = await post(api, "/api/holds", { itemId: "NO-203", qty: 1, ...ASHA });

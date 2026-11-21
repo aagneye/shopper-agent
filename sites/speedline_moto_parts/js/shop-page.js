@@ -57,7 +57,8 @@ export class ShopPage {
   }
 
   /**
-   * Hold an item: the shop's form opens in a dialog and the visitor types their details.
+   * Hold an item. The shop first checks it would hold it, so a refusal comes before anyone
+   * types their details; then its form opens in a dialog for the visitor's details.
    *
    * :param args: {itemId, qty}.
    * :return: A promise of {ok: true, code, until, ...} or {ok: false, reason}.
@@ -65,22 +66,38 @@ export class ShopPage {
   async requestHold({ itemId, qty }) {
     const item = this.catalog.find((entry) => entry.id === itemId);
     if (!item) {
-      return { ok: false, reason: "That item is not sold here." };
+      return this.holdOutcome({ ok: false, reason: "That item is not sold here." });
     }
-    if (item.schedule === "X") {
-      return { ok: false, reason: "This medicine cannot be held. Ask the pharmacist in person." };
+    let check;
+    try {
+      check = await this.api.checkHold(item.id, qty);
+    } catch {
+      return this.holdOutcome({ ok: false, reason: "The shop's stock service did not answer, so nothing was held. Try again in a moment." });
+    }
+    if (!check.ok) {
+      return this.holdOutcome({ ok: false, reason: check.reason });
     }
     const dialog = this.doc.createElement("dialog");
     dialog.className = "hold-dialog";
     dialog.setAttribute("aria-label", `Hold ${item.name}`);
     this.doc.body.append(dialog);
-    const form = new HoldForm({ doc: this.doc, container: dialog, api: this.api, item, qty, intro: null });
+    const form = new HoldForm({ doc: this.doc, container: dialog, api: this.api, item, qty, intro: null, until: check.until });
     // Escape closes a dialog without its buttons: treat it as Cancel.
     dialog.addEventListener("cancel", () => form.cancel());
     dialog.showModal();
     const result = await form.result;
     dialog.close();
     dialog.remove();
+    return this.holdOutcome(result);
+  }
+
+  /**
+   * Show how a hold ended under the stock search, and pass the result on.
+   *
+   * :param result: {ok: true, code, until, ...} or {ok: false, reason}.
+   * :return: The same result.
+   */
+  holdOutcome(result) {
     this.el["stock-status"].textContent = result.ok ? `Held: ${result.code} until ${result.until}. Show the code at the counter.` : result.reason;
     return result;
   }

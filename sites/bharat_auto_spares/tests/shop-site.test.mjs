@@ -109,6 +109,23 @@ function findById(root, id) {
   return undefined;
 }
 
+/**
+ * Wait for the hold form's dialog, which opens once the shop has checked the hold.
+ *
+ * :param before: How many children the body had before the hold was asked for.
+ * :return: The open dialog.
+ */
+async function holdDialog(before) {
+  for (let turn = 0; turn < 100; turn += 1) {
+    const last = document.body.children.at(-1);
+    if (document.body.children.length > before && last.tag === "dialog" && last.open) {
+      return last;
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  throw new Error("The hold form did not open.");
+}
+
 test("the network is valid and keeps its grounding, reply and partner rules", async () => {
   const loaded = await load();
   assert.deepEqual(validateNetwork(loaded.network).errors, []);
@@ -179,9 +196,9 @@ test("the agent reads live stock bands through website_check_stock, never counts
 });
 
 test("a hold opens the shop's form, and the visitor's details stay out of the result", async () => {
+  const before = document.body.children.length;
   const pending = App.page.requestHold({ itemId: HOLDABLE.id, qty: 1 });
-  const dialog = document.body.children.at(-1);
-  assert.equal(dialog.open, true);
+  const dialog = await holdDialog(before);
   findById(dialog, "hold-name").value = VISITOR.name;
   findById(dialog, "hold-phone").value = VISITOR.phone;
   findById(dialog, "hold-form").dispatch("submit");
@@ -193,10 +210,19 @@ test("a hold opens the shop's form, and the visitor's details stay out of the re
   assert.ok(!text.includes("Asha") && !text.includes("98765"));
 });
 
+test("a hold the shop would refuse gives its reason without opening the form", async () => {
+  const empty = items.find((item) => item.qty === 0);
+  const dialogs = document.body.children.length;
+  const result = await App.page.requestHold({ itemId: empty.id, qty: 1 });
+  assert.deepEqual(result, { ok: false, reason: "None left to hold." });
+  assert.equal(document.body.children.length, dialogs, "The hold form opened for a hold the shop refuses.");
+});
+
 test("a cancelled hold holds nothing", async () => {
   const before = (await shopApi.holds()).holds.length;
+  const children = document.body.children.length;
   const pending = App.page.requestHold({ itemId: HOLDABLE.id, qty: 1 });
-  findById(document.body.children.at(-1), "hold-cancel").dispatch("click");
+  findById(await holdDialog(children), "hold-cancel").dispatch("click");
   const result = await pending;
   assert.equal(result.ok, false);
   assert.equal((await shopApi.holds()).holds.length, before);
