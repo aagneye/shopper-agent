@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "nearshelf"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

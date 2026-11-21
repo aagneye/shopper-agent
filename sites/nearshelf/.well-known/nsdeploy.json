@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "nearshelf",
+      "front_man": "nearshelf_assistant",
+      "aliases": [
+        "nearshelf",
+        "nearshelf_assistant"
+      ],
+      "url": "nearshelf"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}
