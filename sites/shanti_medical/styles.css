@@ -82,6 +82,7 @@ button { font: inherit; cursor: pointer; }
 .counter-table th { font-size: 0.85rem; color: var(--muted); }
 .row-empty td { color: var(--muted); }
 .small-button { padding: 5px 12px; font-size: 0.875rem; }
+.dash-actions { display: flex; gap: 8px; margin-top: 6px; }
 
 /* The hold form: in a dialog on the shop page, or alone in the shop's own window. */
 .hold-dialog { max-width: 460px; width: 92%; border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }

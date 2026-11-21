@@ -156,6 +156,40 @@ test("a hold refused for the item says so before checking the details", async ()
   assert.deepEqual(body, { ok: false, field: "qty", reason: "None left to hold." });
 });
 
+test("collecting a hold bills its units once", async () => {
+  const { api } = await shop("shanti_medical");
+  const { body: held } = await post(api, "/api/holds", { itemId: "SM-1001", qty: 1, ...ASHA });
+  const collected = await post(api, "/api/holds/collect", { code: ` ${held.code.toLowerCase()} ` });
+  assert.equal(collected.body.ok, true, collected.body.reason);
+  assert.match(collected.body.summary, new RegExp(`^${held.code} collected: billed 1 × Paracetamol`));
+  const item = (await get(api, "/api/stock/all")).body.items.find((entry) => entry.id === "SM-1001");
+  assert.deepEqual([item.qty, item.held, item.available], [1, 0, 1]);
+  assert.equal((await get(api, "/api/holds")).body.holds[0].status, "collected");
+  assert.deepEqual((await post(api, "/api/holds/collect", { code: held.code })).body, { ok: false, field: "code", reason: `${held.code} was already collected.` });
+  assert.equal((await post(api, "/api/holds/release", { code: held.code })).body.ok, false);
+  assert.equal((await post(api, "/api/sale", { itemId: "SM-1001", qty: 1 })).body.ok, true);
+});
+
+test("releasing a hold puts its units back on the shelf", async () => {
+  const { api } = await shop("shanti_medical");
+  const { body: held } = await post(api, "/api/holds", { itemId: "SM-1001", qty: 2, ...ASHA });
+  assert.equal((await get(api, "/api/stock", { q: "SM-1001" })).body.matches[0].availability, "out_of_stock");
+  const released = await post(api, "/api/holds/release", { code: held.code });
+  assert.deepEqual(released.body, { ok: true, code: held.code, summary: `${held.code} released: 2 × Paracetamol Oral Suspension (Paediatric) back on the shelf.` });
+  assert.equal((await get(api, "/api/stock", { q: "SM-1001" })).body.matches[0].availability, "limited");
+  assert.equal((await get(api, "/api/holds")).body.holds[0].status, "released");
+  assert.equal((await post(api, "/api/holds/collect", { code: held.code })).body.ok, false);
+  assert.deepEqual((await post(api, "/api/holds/collect", { code: "H-0000" })).body, { ok: false, field: "code", reason: "No hold has the code H-0000." });
+});
+
+test("an expired hold is billed at the counter, not collected", async () => {
+  const { api, clock } = await shop("shanti_medical");
+  const { body: held } = await post(api, "/api/holds", { itemId: "SM-1001", qty: 1, ...ASHA });
+  clock.now = new Date("2026-11-20T18:00:00Z");
+  const late = await post(api, "/api/holds/collect", { code: held.code });
+  assert.deepEqual(late.body, { ok: false, field: "code", reason: `${held.code} expired at 11:00 pm. Bill it at the counter if it is still on the shelf.` });
+});
+
 test("a 24-hour shop holds for two hours", async () => {
   const { api } = await shop("night_owl_pharmacy");
   const { body } = await post(api, "/api/holds", { itemId: "NO-203", qty: 1, ...ASHA });

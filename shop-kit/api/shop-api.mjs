@@ -100,7 +100,8 @@ function minutesUntilClose(hours, now) {
 export function createShopApi({ profile, items, store, clock = () => new Date(), allowReset = false }) {
   const now = () => areaNow(clock(), profile.timezone, null);
   const timeOf = (iso) => areaNow(new Date(iso), profile.timezone, null).time;
-  const isActive = (hold) => Date.parse(hold.untilIso) > clock().getTime();
+  // A hold is active until it is collected, released or past its time.
+  const isActive = (hold) => !hold.outcome && Date.parse(hold.untilIso) > clock().getTime();
   const heldOf = (state, itemId) => state.holds.filter((hold) => hold.itemId === itemId && isActive(hold)).reduce((sum, hold) => sum + hold.qty, 0);
   const shopkeeperItem = (state, item) => {
     const held = heldOf(state, item.id);
@@ -284,9 +285,76 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
       phone: `••••••••${hold.phone.slice(-2)}`,
       until: hold.until,
       at: timeOf(hold.at),
-      status: isActive(hold) ? "held" : "expired",
+      status: hold.outcome || (isActive(hold) ? "held" : "expired"),
     }));
     return { status: 200, body: { ok: true, holds } };
+  }
+
+  /**
+   * The hold a shopkeeper names by its code, while it is still held.
+   *
+   * :param state: The shop's state.
+   * :param code: The code as typed, such as "h-4821".
+   * :param expiredNote: What to do about an expired hold.
+   * :return: {hold}, or {refusal} when there is no such hold or it has ended.
+   */
+  function heldHold(state, code, expiredNote) {
+    const wanted = clean(code).toUpperCase();
+    const hold = state.holds.find((entry) => entry.code === wanted);
+    if (!hold) {
+      return { refusal: refuse("code", wanted ? `No hold has the code ${wanted}.` : "Enter a hold code.") };
+    }
+    if (hold.outcome) {
+      return { refusal: refuse("code", `${hold.code} was already ${hold.outcome}.`) };
+    }
+    if (!isActive(hold)) {
+      return { refusal: refuse("code", `${hold.code} expired at ${hold.until}. ${expiredNote}`) };
+    }
+    return { hold };
+  }
+
+  /**
+   * POST /api/holds/collect {code}: the shopper picked the hold up and paid. Its units are
+   * billed and the hold ends in one step, so the counter never has to sell held units.
+   */
+  async function collectHold({ body }) {
+    const state = await store.get();
+    const found = heldHold(state, body.code, "Bill it at the counter if it is still on the shelf.");
+    if (found.refusal) {
+      return found.refusal;
+    }
+    const { hold } = found;
+    const item = state.items.find((entry) => entry.id === hold.itemId);
+    if (!item || item.qty < hold.qty) {
+      return refuse("code", `The units held for ${hold.code} are no longer in stock.`);
+    }
+    item.qty -= hold.qty;
+    hold.outcome = "collected";
+    hold.endedAt = clock().toISOString();
+    state.sales.push({ itemId: item.id, qty: hold.qty, at: hold.endedAt, hold: hold.code });
+    state.sales.splice(0, Math.max(0, state.sales.length - MOST_LOGGED));
+    await store.set(state);
+    return {
+      status: 200,
+      body: { ok: true, code: hold.code, summary: `${hold.code} collected: billed ${hold.qty} × ${item.name}.`, item: shopkeeperItem(state, item) },
+    };
+  }
+
+  /**
+   * POST /api/holds/release {code}: the shopper will not come, so the held units go back
+   * on the shelf before the hold would end.
+   */
+  async function releaseHold({ body }) {
+    const state = await store.get();
+    const found = heldHold(state, body.code, "Its units are already back on the shelf.");
+    if (found.refusal) {
+      return found.refusal;
+    }
+    const { hold } = found;
+    hold.outcome = "released";
+    hold.endedAt = clock().toISOString();
+    await store.set(state);
+    return { status: 200, body: { ok: true, code: hold.code, summary: `${hold.code} released: ${hold.qty} × ${hold.item} back on the shelf.` } };
   }
 
   /**
@@ -346,6 +414,8 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     "/api/sale": { POST: sale },
     "/api/holds": { GET: listHolds, POST: createHold },
     "/api/holds/check": { GET: checkHold },
+    "/api/holds/collect": { POST: collectHold },
+    "/api/holds/release": { POST: releaseHold },
     "/api/missed": { GET: listMissed },
     "/api/reset": { POST: reset },
   };

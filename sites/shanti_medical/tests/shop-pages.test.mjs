@@ -69,3 +69,25 @@ test("the dashboard shows holds masked, missed demand and low stock", async () =
   assert.match(textOf(document.getElementById("dash-missed")), /unicorn tears/);
   assert.equal(document.getElementById("dash-holds-empty").hidden, true);
 });
+
+test("the dashboard marks a hold collected or released, and the stock follows", async () => {
+  const api = client();
+  const target = items.find((item) => item.qty >= 2 && !["H", "H1", "X"].includes(item.schedule));
+  const first = await api.createHold({ itemId: target.id, qty: 1, name: "Asha Verma", phone: "9876543221" });
+  const second = await api.createHold({ itemId: target.id, qty: 1, name: "Ravi Kumar", phone: "9876543299" });
+  const document = StubDocument.fromHtml(await readFile(new URL("../dashboard.html", import.meta.url), "utf8"), `${BASE}/dashboard.html`);
+  const page = new DashboardPage({ document, api });
+  await page.mount();
+  const rows = document.getElementById("dash-holds").children;
+  assert.deepEqual(rows.map((row) => row.querySelectorAll("button").map((button) => button.textContent)), [["Collected", "Release"], ["Collected", "Release"]]);
+  await page.collect(first.code);
+  assert.match(document.getElementById("dash-status").textContent, new RegExp(`^${first.code} collected`));
+  await page.release(second.code);
+  assert.match(document.getElementById("dash-status").textContent, new RegExp(`^${second.code} released`));
+  const item = (await api.stockAll()).items.find((entry) => entry.id === target.id);
+  assert.deepEqual([item.qty, item.held], [target.qty - 1, 0]);
+  const shown = document.getElementById("dash-holds").children;
+  assert.match(textOf(shown[0]), /released/);
+  assert.match(textOf(shown[1]), /collected/);
+  assert.equal(shown.flatMap((row) => row.querySelectorAll("button")).length, 0);
+});

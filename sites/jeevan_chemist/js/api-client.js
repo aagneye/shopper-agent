@@ -71,6 +71,16 @@ export class ApiClient {
     return this.transport("POST", "/api/holds", null, details);
   }
 
+  /** The shopper picked a hold up and paid: bill its units and end it. */
+  collectHold(code) {
+    return this.transport("POST", "/api/holds/collect", null, { code });
+  }
+
+  /** The shopper will not come: put a hold's units back on the shelf. */
+  releaseHold(code) {
+    return this.transport("POST", "/api/holds/release", null, { code });
+  }
+
   /** The holds list, masked. */
   holds() {
     return this.transport("GET", "/api/holds", null, null);

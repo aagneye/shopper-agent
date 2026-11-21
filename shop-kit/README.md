@@ -63,7 +63,7 @@ node tools/serve-shop.mjs sites/shanti_medical --shop shanti_medical --allow-res
 | Path | What it is |
 |---|---|
 | `api/stock.mjs` | Reads billing exports. Searches stock the way shoppers ask: "children's paracetamol syrup" finds the paediatric suspension, and part numbers match exactly |
-| `api/shop-api.mjs` | The shop's stock API: live bands, holds until closing, counter sales, missed demand. It uses no Node built-ins, so it can run in a serverless function |
+| `api/shop-api.mjs` | The shop's stock API: live bands, holds until closing (checked before anyone types details, then collected or released), counter sales, missed demand. It uses no Node built-ins, so it can run in a serverless function |
 | `api/memory-store.mjs` | An in-memory store. The local server uses `tools/file-store.mjs` |
 | `lib/network.mjs` | Builds the shop's agent network and manifest. The grounding, partner and presentation rules are copied word for word from the agentify-website template |
 | `template/` | The shop site |

@@ -16,7 +16,7 @@ node tools/serve-shop.mjs sites/speedline_moto_parts --shop speedline_moto_parts
 |---|---|
 | `index.html` | The shop's page: facts, a live stock search, holds, and "Ask Speedline Moto Parts" |
 | `counter.html` | The demo billing counter. Each bill changes the stock the agent answers from |
-| `dashboard.html` | Holds to set aside, missed demand (what people asked for that the shop didn't have), and low stock |
+| `dashboard.html` | Holds to set aside, marked Collected (billed) or Released (back on the shelf), missed demand (what people asked for that the shop didn't have), and low stock |
 
 ## The agent
 
