@@ -109,6 +109,32 @@ test("hours that run past midnight stay open until they end", () => {
   assert.deepEqual(openState(lateHours, SUN_0200), { open: false, label: "closed, opens Sat 6:00 pm" });
 });
 
+test("a shop open all day on some days says the day it finally closes", () => {
+  const hours = {
+    mon: [["00:00", "24:00"]],
+    tue: [["00:00", "24:00"]],
+    wed: [["00:00", "24:00"]],
+    thu: [["00:00", "24:00"]],
+    fri: [["00:00", "24:00"]],
+    sat: [["00:00", "24:00"]],
+  };
+  assert.deepEqual(openState(hours, FRI_2300), { open: true, label: "open until Sat midnight" });
+});
+
+test("evening hours that carry on after midnight say when they really end", () => {
+  const hours = { fri: [["18:00", "24:00"]], sat: [["00:00", "02:00"]] };
+  assert.deepEqual(openState(hours, FRI_2300), { open: true, label: "open until Sat 2:00 am" });
+});
+
+test("before midnight, a range that ends after midnight names the next day", () => {
+  const SAT_2300 = areaNow(new Date("2026-11-21T17:30:00Z"), IST, null);
+  assert.deepEqual(openState({ sat: [["18:00", "02:00"]] }, SAT_2300), { open: true, label: "open until Sun 2:00 am" });
+});
+
+test("a shop open until midnight today, and closed tomorrow, says midnight", () => {
+  assert.deepEqual(openState({ fri: [["09:00", "24:00"]] }, FRI_2300), { open: true, label: "open until midnight" });
+});
+
 test("distances round to 10 m below a kilometre and to 0.1 km above", () => {
   assert.equal(formatDistance(205.4), "210 m");
   assert.equal(formatDistance(995), "1.0 km");

@@ -149,12 +149,12 @@ export function openState(hours, now) {
   for (const [start, end] of ranges(hours, now.weekday)) {
     const overnight = end <= start;
     if (now.minutes >= start && (overnight || now.minutes < end)) {
-      return { open: true, label: `open until ${formatMinutes(end)}` };
+      return openUntil(hours, today, overnight ? (today + 1) % 7 : today, end);
     }
   }
   for (const [start, end] of ranges(hours, yesterday)) {
     if (end <= start && now.minutes < end) {
-      return { open: true, label: `open until ${formatMinutes(end)}` };
+      return openUntil(hours, today, today, end);
     }
   }
   const laterToday = ranges(hours, now.weekday).map(([start]) => start).filter((start) => start > now.minutes);
@@ -169,6 +169,37 @@ export function openState(hours, now) {
     }
   }
   return { open: false, label: "closed" };
+}
+
+/**
+ * Say when an open place closes, following hours that run on past midnight: a range
+ * that ends at midnight continues into the next day's range that starts at 00:00.
+ *
+ * :param hours: The place's hours.
+ * :param today: The index in DAYS of the day it is now.
+ * :param closeDay: The index in DAYS of the day the current range ends on.
+ * :param end: Minutes on closeDay when the current range ends; 1440 is the midnight
+ *   at the end of closeDay.
+ * :return: {open: true, label}, naming the closing day when it is not today.
+ */
+function openUntil(hours, today, closeDay, end) {
+  let day = closeDay;
+  let minutes = end;
+  for (let hops = 0; minutes === 1440; hops += 1) {
+    if (hops === 7) {
+      return { open: true, label: "open 24 hours" };
+    }
+    const nextDay = (day + 1) % 7;
+    const next = ranges(hours, DAYS[nextDay]).find(([start]) => start === 0);
+    if (!next) {
+      break;
+    }
+    day = nextDay;
+    minutes = next[1] > next[0] ? next[1] : 1440;
+  }
+  const when = minutes === 1440 ? "midnight" : formatMinutes(minutes);
+  const label = day === today ? `open until ${when}` : `open until ${DAY_LABELS[DAYS[day]]} ${when}`;
+  return { open: true, label };
 }
 
 /**
