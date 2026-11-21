@@ -1,0 +1,320 @@
+/* NearShelf: warm, calm, trustworthy. No web fonts and no third-party requests. */
+:root {
+  --ink: #14241f;
+  --ink-soft: #33443e;
+  --muted: #5b6862;
+  --paper: #f6f4ee;
+  --card: #ffffff;
+  --line: #e3ddd0;
+  --brand: #0f5f4f;
+  --brand-deep: #0a4438;
+  --brand-tint: #e5f1ec;
+  --accent: #9a3412;
+  --accent-tint: #fdf0e6;
+  --gold: #f2b56b;
+  --ok: #166534;
+  --ok-tint: #e3f4e8;
+  --bad: #9f1239;
+  --bad-tint: #fbe8ee;
+  --none: #57534e;
+  --none-tint: #efedea;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(20, 36, 31, 0.06), 0 8px 24px rgba(20, 36, 31, 0.06);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brand); }
+a:hover { color: var(--brand-deep); }
+
+h1, h2, h3 { line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 12px; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0 0 12px; }
+
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute; left: 16px; top: -48px;
+  background: var(--brand); color: #fff;
+  padding: 8px 12px; border-radius: 8px; z-index: 10;
+}
+.skip-link:focus { top: 12px; }
+
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* Top bar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1240px; margin: 0 auto; padding: 18px 24px;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  color: var(--brand); text-decoration: none; font-weight: 800; font-size: 1.25rem;
+}
+.brand-mark { width: 32px; height: 32px; }
+.topnav { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.95rem; }
+.topnav a { color: var(--ink-soft); text-decoration: none; }
+.topnav a:hover { color: var(--brand); text-decoration: underline; }
+
+main { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; }
+
+/* Hero */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: end;
+  padding: 28px 0 32px;
+}
+.eyebrow {
+  display: inline-block; margin-bottom: 14px; padding: 4px 12px; border-radius: 999px;
+  background: var(--brand-tint); color: var(--brand-deep); font-weight: 600; font-size: 0.85rem;
+}
+.hero h1 { font-size: clamp(2rem, 4.2vw, 3.1rem); font-weight: 800; color: var(--ink); }
+.lede { font-size: 1.1rem; color: var(--ink-soft); max-width: 36em; }
+.clock-line { color: var(--muted); font-size: 0.92rem; margin: 0; }
+
+.need-form {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+  padding: 22px; box-shadow: var(--shadow);
+}
+.need-label { display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
+#need-input {
+  width: 100%; font: inherit; font-size: 1.05rem; padding: 12px 14px;
+  border: 1.5px solid var(--line); border-radius: 12px; background: #fffdf8;
+}
+#need-input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-tint); }
+.need-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
+.need-row select {
+  font: inherit; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+}
+.check { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+.need-row .primary { margin-left: auto; }
+
+button { font: inherit; cursor: pointer; }
+.primary {
+  background: var(--brand); color: #fff; border: 0; border-radius: 10px;
+  padding: 10px 20px; font-weight: 700;
+}
+.primary:hover { background: var(--brand-deep); }
+.secondary {
+  background: var(--brand-tint); color: var(--brand-deep); border: 1px solid #bfdcd0; border-radius: 10px;
+  padding: 8px 16px; font-weight: 600;
+}
+.secondary:hover { background: #d4e9e0; }
+.link-button {
+  background: none; border: 0; padding: 2px 4px; color: var(--accent);
+  text-decoration: underline; font-size: 0.875rem;
+}
+
+.form-status { min-height: 1.4em; margin: 10px 0 0; color: var(--accent); font-size: 0.92rem; }
+.form-status:empty { min-height: 0; margin: 0; }
+
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.chips-label { color: var(--muted); font-size: 0.9rem; }
+.chip {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 12px; font-size: 0.875rem; color: var(--ink-soft);
+}
+.chip:hover { border-color: var(--brand); color: var(--brand); }
+
+/* Main layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 24px; align-items: start; }
+.col-side { display: grid; gap: 16px; position: sticky; top: 12px; }
+
+.panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px; box-shadow: var(--shadow);
+}
+
+/* Results board */
+.results-panel { border-top: 4px solid var(--brand); }
+.cards, .holds, .shops, .saved-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.card {
+  border: 1px solid var(--line); border-left: 5px solid var(--none); border-radius: 12px;
+  padding: 12px 14px; background: #fffdf9;
+}
+.card.availability-in_stock { border-left-color: var(--ok); }
+.card.availability-limited { border-left-color: var(--accent); }
+.card.availability-out_of_stock { border-left-color: var(--bad); }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.card-shop { font-weight: 700; }
+.card-item { margin: 0 0 4px; font-weight: 600; color: var(--ink-soft); }
+.card-meta, .card-source, .card-note { margin: 0; font-size: 0.875rem; color: var(--muted); }
+.card-note { margin-top: 4px; color: var(--ink-soft); }
+
+.badge { flex: none; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 700; }
+.badge-in_stock { background: var(--ok-tint); color: var(--ok); }
+.badge-limited { background: var(--accent-tint); color: var(--accent); }
+.badge-out_of_stock { background: var(--bad-tint); color: var(--bad); }
+.badge-no_answer, .badge-declined { background: var(--none-tint); color: var(--none); }
+
+/* Holds */
+.hold {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 2px 12px; align-items: center;
+  border: 1px dashed #c9bfa9; border-radius: 12px; padding: 10px 12px; background: #fffaf0;
+}
+.hold-code {
+  grid-row: span 2; font: 700 1rem ui-monospace, "Cascadia Code", Consolas, monospace;
+  color: var(--brand-deep); background: var(--brand-tint); border-radius: 8px; padding: 6px 8px;
+}
+.hold-item { font-weight: 600; }
+.hold-where { grid-column: 2; font-size: 0.85rem; color: var(--muted); }
+.hold .link-button { grid-row: 1 / span 2; grid-column: 3; }
+
+/* Shops */
+.shop { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.shop:last-child { border-bottom: 0; padding-bottom: 0; }
+.shop-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.shop-name { font-weight: 700; }
+.tag { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.shop-meta { margin: 2px 0 0; font-size: 0.9rem; }
+.shop.is-open .shop-meta { color: var(--ok); }
+.shop.is-closed .shop-meta { color: var(--muted); }
+.shop-trust { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.shop-links { margin: 4px 0 0; display: flex; gap: 12px; font-size: 0.85rem; }
+
+/* Details */
+.details { margin-top: 40px; }
+.details h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pill {
+  font-size: 0.78rem; font-weight: 600; color: var(--brand-deep); background: var(--brand-tint);
+  border-radius: 999px; padding: 3px 10px; letter-spacing: 0;
+}
+.details-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.details label { display: block; font-size: 0.875rem; font-weight: 600; margin: 10px 0 4px; color: var(--ink-soft); }
+.details input, .details select {
+  width: 100%; font: inherit; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+}
+.details input:focus, .details select:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-tint); }
+.stack-form { margin-bottom: 10px; }
+.stack-form .secondary { margin-top: 12px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.saved { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.95rem; }
+
+/* How it works */
+.how { margin-top: 40px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0; list-style: none; counter-reset: step; }
+.steps li {
+  counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 18px 18px 58px; position: relative; box-shadow: var(--shadow);
+}
+.steps li::before {
+  content: counter(step); position: absolute; left: 18px; top: 16px;
+  width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff;
+  display: grid; place-items: center; font-weight: 800;
+}
+
+.footer { max-width: 1240px; margin: 0 auto; padding: 0 24px 40px; color: var(--muted); font-size: 0.875rem; }
+
+/* Assistant layout (from the agentify-website template, in NearShelf's colors). */
+.assistant { margin-top: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.assistant > p { color: var(--ink-soft); }
+.assistant-note { font-size: 0.875rem; color: var(--muted) !important; }
+#assistant-status { font-size: 0.875rem; color: var(--accent); }
+
+/* The runtime reads these variables for its chat, settings and agent panels. White text
+   sits on --ns-primary and --ns-accent, so both keep at least 4.5:1 contrast with white. */
+#agent-app {
+  --ns-font: var(--font);
+  --ns-bg: #ffffff;
+  --ns-fg: #14241f;
+  --ns-primary: #0f5f4f;
+  --ns-accent: #9a3412;
+  --ns-border: #e3ddd0;
+  --ns-panelbg: #ffffff;
+  --ns-msgbg: #f3f1ea;
+  --ns-muted: #5b6862;
+}
+
+.assistant-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Set the height once the runtime has mounted the chat, so a failed load leaves no
+   empty box. */
+#agent-app.ns-composed-app [data-ns-slot="chat"] { height: 640px; }
+/* Keep --ns-msgbg different from --ns-bg, or bot replies lose their bubble. */
+#agent-app .ns-chat { background: var(--ns-bg); }
+
+/* Site-wide form rules often stretch the runtime's own controls. Undo them here. */
+#agent-app input[type="checkbox"],
+#agent-app input[type="radio"] { width: auto; }
+#agent-app .ns-header { flex-wrap: wrap; }
+#agent-app .ns-settings-body label { margin: 4px 0; font-weight: 400; }
+#agent-app .ns-w-label { font-family: inherit; }
+#agent-app .ns-widget label { margin: 0; }
+#agent-app .ns-w-radio label,
+#agent-app .ns-w-multi label,
+#agent-app .ns-w-toggle { font-weight: 400; }
+#agent-app .ns-w-toggle { font-size: 13px; }
+#agent-app button { margin: 0; }
+#agent-app .ns-w-choice { color: var(--ns-fg); }
+#agent-app .ns-devtoggle:not(.on):hover,
+#agent-app .ns-modal-close:hover { background: transparent; }
+#agent-app .ns-w-choice:disabled:hover { background: #fafbfc; }
+/* The runtime's message rule hides the partner consent card's own background. */
+#agent-app .ns-consent { background: #fffbeb; }
+/* While a consent card waits, the status line already says "Contacting", though nothing
+   has been sent. Hide it until the visitor answers. */
+#agent-app .ns-msgs:has(.ns-consent-actions) > .ns-turn-status { display: none; }
+#agent-app .ns-msg { overflow-wrap: break-word; }
+#agent-app .ns-consent-actions { flex-wrap: wrap; }
+#agent-app .ns-consent-actions button { white-space: nowrap; }
+
+/* site.js and the runtime add their confirmation dialogs to <body>, outside #agent-app. */
+body > dialog h2 { margin: 0 0 12px; font: 700 1.25em var(--font); }
+body > dialog button { margin-right: 8px; }
+.assistant-review { max-width: 640px; width: 85%; max-height: 85vh; overflow: auto; border: 1px solid #888; border-radius: 12px; padding: 24px; font: 16px var(--font); }
+.assistant-review dl { display: grid; grid-template-columns: fit-content(40%) 1fr; gap: 4px 16px; margin: 12px 0; }
+.assistant-review dt { font-weight: 600; }
+.assistant-review dd { margin: 0; overflow-wrap: anywhere; }
+.assistant-review details { margin: 12px 0; }
+.assistant-review pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.assistant-review .assistant-decline { background: transparent; color: inherit; border: 1px solid currentColor; }
+
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: 1fr; }
+  .col-side { position: static; }
+  .details-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 760px) {
+  .topbar { padding: 14px 16px; flex-wrap: wrap; }
+  main { padding: 0 16px 40px; }
+  .footer { padding: 0 16px 32px; }
+  .hero { grid-template-columns: 1fr; gap: 20px; padding-top: 12px; }
+  .need-row .primary { margin-left: 0; width: 100%; }
+  .details-grid, .steps { grid-template-columns: 1fr; }
+  .assistant-panels { grid-template-columns: 1fr; }
+  #agent-app.ns-composed-app [data-ns-slot="chat"] { height: 560px; }
+  .assistant-review dl { grid-template-columns: 1fr; gap: 0; }
+  .assistant-review dd { margin-bottom: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

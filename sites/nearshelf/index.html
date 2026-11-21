@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NearShelf · Your agent asks around</title>
+  <meta name="description" content="Tell NearShelf what you need. Your own agent asks nearby pharmacies and vehicle parts dealers whether they have it, compares their live stock and helps you hold it for pickup.">
+  <meta name="theme-color" content="#0f5f4f">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#need-input">Skip to the search</a>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="NearShelf home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect x="3" y="5" width="26" height="22" rx="5" fill="currentColor"></rect>
+        <path d="M8 14h16M8 21h16" stroke="#f6f4ee" stroke-width="2.4" stroke-linecap="round"></path>
+        <circle cx="12" cy="10.5" r="2" fill="#f2b56b"></circle>
+        <circle cx="20" cy="17.5" r="2" fill="#f2b56b"></circle>
+      </svg>
+      <span>NearShelf</span>
+    </a>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#how">How it works</a>
+      <a href="#shops-panel">Shops</a>
+      <a href="#details">Your details</a>
+      <a href="agent-manifest.json">Agent manifest</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-copy">
+        <p class="eyebrow">Neem Chowk · a demo neighbourhood</p>
+        <h1 id="hero-heading">Your agent asks around,<br>so you don't have to.</h1>
+        <p class="lede">Tell NearShelf what you need. Your own agent asks the agents of nearby pharmacies and vehicle parts dealers, compares their live stock and helps you hold it for pickup. No phone calls, and shops never learn who asked.</p>
+        <p id="clock-line" class="clock-line" role="status"></p>
+      </div>
+
+      <form id="need-form" class="need-form" novalidate>
+        <label class="need-label" for="need-input">What do you need?</label>
+        <input id="need-input" name="need" type="text" maxlength="120" autocomplete="off" placeholder="e.g. children's paracetamol syrup">
+        <div class="need-row">
+          <label class="visually-hidden" for="need-category">Kind of shop</label>
+          <select id="need-category" name="category">
+            <option value="pharmacy">Medicine</option>
+            <option value="auto_parts">Vehicle part</option>
+          </select>
+          <label class="check"><input id="need-open-now" name="openNow" type="checkbox" checked> Open now only</label>
+          <button id="need-submit" class="primary" type="submit">Ask around</button>
+        </div>
+        <p id="need-status" class="form-status" role="status"></p>
+        <div class="chips" aria-label="Try an example">
+          <span class="chips-label">Try:</span>
+          <button id="chip-syrup" class="chip" type="button">Children's paracetamol syrup</button>
+          <button id="chip-ors" class="chip" type="button">ORS sachets</button>
+          <button id="chip-clutch" class="chip" type="button">Clutch cable for my scooter</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="layout">
+      <div class="col-main">
+        <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
+          <h2 id="assistant-heading">Ask NearShelf</h2>
+          <p>Your agent shortlists open shops, asks each one's own agent after you agree, then puts the answers on the results board.</p>
+          <p class="assistant-note">Your messages go to the AI provider you choose in the settings below. Shops get only the item you ask about, never your name, number or location. Holds are confirmed in the shop's own window.</p>
+          <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+          <div id="agent-app">
+            <div data-ns-slot="header"></div>
+            <div class="assistant-panels">
+              <div data-ns-slot="chat"></div>
+              <div data-ns-slot="agents"></div>
+            </div>
+            <div data-ns-slot="settings"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="col-side" aria-label="Results and shops">
+        <section class="panel results-panel" aria-labelledby="results-heading">
+          <h2 id="results-heading">Results</h2>
+          <p id="results-summary" class="muted">Ask for something and your agent's comparison appears here.</p>
+          <ol id="results" class="cards"></ol>
+        </section>
+
+        <section class="panel" aria-labelledby="holds-heading">
+          <h2 id="holds-heading">My holds</h2>
+          <p id="holds-empty" class="muted">No holds yet. Ask your agent to hold an item at a shop that has it.</p>
+          <ul id="holds" class="holds"></ul>
+        </section>
+
+        <section id="shops-panel" class="panel" aria-labelledby="shops-heading">
+          <h2 id="shops-heading">Shops near you</h2>
+          <p class="muted small">From the Neem Chowk places directory. Each shop runs its own agent on its own website.</p>
+          <ul id="shops" class="shops"></ul>
+        </section>
+      </aside>
+    </div>
+
+    <section id="details" class="details" aria-labelledby="details-heading">
+      <h2 id="details-heading">Your details <span class="pill">saved on this device only</span></h2>
+      <p class="muted">Your agent reads these to ask the right questions. They stay in this browser and are never sent to shops.</p>
+      <div class="details-grid">
+        <div class="panel">
+          <h3>Where you are</h3>
+          <label for="spot-select">Your spot in Neem Chowk</label>
+          <select id="spot-select"></select>
+          <label for="demo-time-select">Demo time</label>
+          <select id="demo-time-select">
+            <option value="">Live: Neem Chowk time now</option>
+            <option value="09:30">9:30 am, morning</option>
+            <option value="18:30">6:30 pm, evening</option>
+            <option value="22:45">10:45 pm, night</option>
+            <option value="00:30">12:30 am, after midnight</option>
+          </select>
+          <p class="muted small">Neem Chowk runs on India time (IST). A demo time changes which shops count as open, wherever you are.</p>
+        </div>
+
+        <div class="panel">
+          <h3>My garage</h3>
+          <form id="garage-form" class="stack-form" novalidate>
+            <div class="two">
+              <div><label for="garage-maker">Maker</label><input id="garage-maker" maxlength="40" autocomplete="off" placeholder="Vayu"></div>
+              <div><label for="garage-model">Model</label><input id="garage-model" maxlength="40" autocomplete="off" placeholder="Zip 125"></div>
+            </div>
+            <div class="two">
+              <div><label for="garage-year">Year</label><input id="garage-year" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="2019"></div>
+              <div><label for="garage-variant">Variant (optional)</label><input id="garage-variant" maxlength="40" autocomplete="off" placeholder="drum brake"></div>
+            </div>
+            <button class="secondary" type="submit">Save vehicle</button>
+            <p id="garage-status" class="form-status" role="status"></p>
+          </form>
+          <ul id="garage-list" class="saved-list"></ul>
+        </div>
+
+        <div class="panel">
+          <h3>My list</h3>
+          <form id="list-form" class="stack-form" novalidate>
+            <div class="two">
+              <div><label for="list-name">Medicine or item</label><input id="list-name" maxlength="80" autocomplete="off" placeholder="ORS sachets"></div>
+              <div><label for="list-qty">How many (optional)</label><input id="list-qty" maxlength="20" autocomplete="off" placeholder="4"></div>
+            </div>
+            <button class="secondary" type="submit">Save item</button>
+            <p id="list-status" class="form-status" role="status"></p>
+          </form>
+          <ul id="list-items" class="saved-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="how" aria-labelledby="how-heading">
+      <h2 id="how-heading">How it works</h2>
+      <ol class="steps">
+        <li><strong>You ask once.</strong> Your agent picks up to four open, verified shops near you from the area's places directory.</li>
+        <li><strong>It asks their agents.</strong> Each shop's own agent answers from the shop's live stock. You approve every shop it contacts, and the shop sees only the item.</li>
+        <li><strong>You compare and hold.</strong> Answers land on the results board with the time stock was checked. A hold is confirmed in the shop's own window.</li>
+      </ol>
+      <p class="muted">NearShelf follows the <a href="https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md">open agentic web specification</a>. Its agents run in your browser, and you choose the AI provider. Read its <a href="agent-manifest.json">agent manifest</a>, its <a href="nearshelf.network.json">agent network</a> and the <a href="directory/neem-chowk.json">places directory</a>.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><strong>Demo.</strong> Neem Chowk is a fictional neighbourhood. Its shops, licences, brands and stock are made up. NearShelf never gives medical advice. In an emergency, call 112.</p>
+  </footer>
+</body>
+</html>
