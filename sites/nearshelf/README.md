@@ -60,7 +60,7 @@ Other agent sites can call this network, but they get no website tools, because 
 
 ## Linked sites
 
-NearShelf asks these partner networks. They are built in phase 2 of the project.
+NearShelf asks these partner networks. They are in `sites/`, and `npm run dev` serves them all. Each shop shares `check_stock` and `get_shop_info` with any site through its action bridge, and `request_hold` with NearShelf and the other Neem Chowk shops only. A hold opens in the shop's own window.
 
 | Partner | Network URL | Asked by |
 |---|---|---|
