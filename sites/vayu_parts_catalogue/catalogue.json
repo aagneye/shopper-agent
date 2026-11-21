@@ -1,0 +1,20 @@
+{
+  "maker": "Vayu Motors (demo maker)",
+  "note": "Demo data. Vayu Motors and its models and parts are fictional.",
+  "models": [
+    { "name": "Vayu Zip 125", "years": [2017, 2024], "variants": ["drum brake", "disc brake"] },
+    { "name": "Vayu Zip 110", "years": [2016, 2022], "variants": ["drum brake"] },
+    { "name": "Vayu Swift 150", "years": [2020, 2023], "variants": ["disc brake"] }
+  ],
+  "parts": [
+    { "partNo": "VZ125-CLC-1722", "name": "Clutch Cable Assembly", "kind": "clutch cable", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2022] }], "alternatives": ["NX-CC-125A (compatible)"] },
+    { "partNo": "VZ110-CLC-1622", "name": "Clutch Cable Assembly", "kind": "clutch cable", "type": "genuine", "fits": [{ "model": "Vayu Zip 110", "years": [2016, 2022] }], "alternatives": [] },
+    { "partNo": "VS150-CLC-2023", "name": "Clutch Cable Assembly", "kind": "clutch cable", "type": "genuine", "fits": [{ "model": "Vayu Swift 150", "years": [2020, 2023] }], "alternatives": [] },
+    { "partNo": "VZ125-BSF-1722", "name": "Front Brake Shoe Set", "kind": "front brake", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2022], "variant": "drum brake" }], "alternatives": [] },
+    { "partNo": "VZ125-BPF-1722", "name": "Front Disc Brake Pad Set", "kind": "front brake", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2022], "variant": "disc brake" }], "alternatives": [] },
+    { "partNo": "VZ125-AFL-1724", "name": "Air Filter Element", "kind": "air filter", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2024] }], "alternatives": [] },
+    { "partNo": "VZ125-CHK-1722", "name": "Chain Kit 428", "kind": "chain kit", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2022] }], "alternatives": [] },
+    { "partNo": "VZ125-HLB-1724", "name": "Headlamp Bulb 35W", "kind": "headlamp bulb", "type": "genuine", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2024] }], "alternatives": [] },
+    { "partNo": "UNI-SPK-A7", "name": "Spark Plug A7", "kind": "spark plug", "type": "compatible", "fits": [{ "model": "Vayu Zip 125", "years": [2017, 2024] }, { "model": "Vayu Zip 110", "years": [2016, 2022] }], "alternatives": [] }
+  ]
+}

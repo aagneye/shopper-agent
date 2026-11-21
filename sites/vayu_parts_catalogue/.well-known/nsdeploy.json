@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "vayu_parts_catalogue",
+      "front_man": "vayu_parts_catalogue_assistant",
+      "aliases": [
+        "vayu_parts_catalogue",
+        "vayu_parts_catalogue_assistant"
+      ],
+      "url": "vayu_parts_catalogue"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

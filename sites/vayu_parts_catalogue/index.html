@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vayu Parts Catalogue · Neem Chowk demo</title>
+  <meta name="description" content="Find the exact part number for a Vayu two-wheeler, or ask the catalogue's own agent.">
+  <meta name="theme-color" content="#0e7490">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">Vayu Parts Catalogue</a>
+    <nav class="topnav" aria-label="Catalogue sections">
+      <a href="#finder">Part finder</a>
+      <a href="#assistant">Ask the catalogue</a>
+      <a href="agent-manifest.json">Agent manifest</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <p class="eyebrow">Official parts catalogue · Vayu Motors (demo)</p>
+      <h1 id="hero-heading">The exact part, for your exact Vayu.</h1>
+      <p class="lede">Pick your model, its year and the part. You get the part number dealers stock it under, and any compatible alternative. Shoppers' agents, such as NearShelf, ask this catalogue before they ask dealers.</p>
+    </section>
+    <div class="layout">
+      <section id="finder" class="panel" aria-labelledby="finder-heading">
+        <h2 id="finder-heading">Part finder</h2>
+        <form id="find-form" novalidate>
+          <label for="find-model">Model</label>
+          <select id="find-model"></select>
+          <label for="find-year">Year</label>
+          <input id="find-year" type="number" inputmode="numeric" min="2016" max="2024" value="2019">
+          <label for="find-variant">Variant</label>
+          <select id="find-variant"></select>
+          <label for="find-part">Part</label>
+          <select id="find-part"></select>
+          <button class="primary" type="submit">Find the part</button>
+        </form>
+        <p id="find-status" class="status" role="status"></p>
+        <ul id="find-results" class="parts"></ul>
+      </section>
+      <section id="assistant" class="assistant panel" aria-labelledby="assistant-heading">
+        <h2 id="assistant-heading">Ask the catalogue</h2>
+        <p>Describe your vehicle and the part in your own words.</p>
+        <p class="assistant-note">Your messages, and the catalogue data the assistant reads, go to the AI provider you choose in the settings below.</p>
+        <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the part finder.</p>
+        <div id="agent-app">
+          <div data-ns-slot="header"></div>
+          <div class="assistant-panels">
+            <div data-ns-slot="chat"></div>
+            <div data-ns-slot="agents"></div>
+          </div>
+          <div data-ns-slot="settings"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="footer"><p><strong>Demo.</strong> Vayu Motors, its models and its part numbers are fictional. This catalogue does not sell parts or check stock: Neem Chowk's dealers do.</p></footer>
+</body>
+</html>

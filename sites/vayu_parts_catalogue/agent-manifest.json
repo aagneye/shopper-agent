@@ -1,0 +1,77 @@
+{
+  "brand": "Vayu Parts Catalogue",
+  "networks": [
+    {
+      "name": "vayu_parts_catalogue",
+      "front_man": "vayu_parts_catalogue_assistant",
+      "hocon": "./vayu_parts_catalogue.network.json",
+      "description": "Find the exact Vayu part number for your vehicle and part, with any compatible alternative.",
+      "tags": [
+        "agentified-website",
+        "parts-catalogue"
+      ],
+      "sample_queries": [
+        "Which clutch cable fits a 2019 Vayu Zip 125?",
+        "I need front brake parts for my 2020 Zip 125 with disc brakes.",
+        "What spark plug does a 2018 Vayu Zip 110 take?",
+        "Is there a clutch cable for a 2023 Zip 125?",
+        "Can you sell me the part?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents and page-local actions only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "vayu_parts_catalogue",
+    "front_man": "vayu_parts_catalogue_assistant",
+    "available": false,
+    "reason": "This is a static bundle; a public MCP facade requires an application host."
+  },
+  "theme": {
+    "primary": "#0e7490"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "vayu_parts_catalogue",
+        "front_man": "vayu_parts_catalogue_assistant",
+        "aliases": [
+          "vayu_parts_catalogue",
+          "vayu_parts_catalogue_assistant"
+        ],
+        "url": "vayu_parts_catalogue"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "lookup_part"
+    ]
+  }
+}

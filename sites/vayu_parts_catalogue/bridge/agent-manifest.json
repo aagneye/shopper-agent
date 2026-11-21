@@ -1,0 +1,11 @@
+{
+  "networks": [
+    {
+      "name": "vayu_parts_catalogue"
+    }
+  ],
+  "actions": {
+    "version": 1,
+    "module": "./bridge-actions.js"
+  }
+}
