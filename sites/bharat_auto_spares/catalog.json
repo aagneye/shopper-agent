@@ -1,0 +1,44 @@
+[
+  {
+    "id": "VZ125-CLC-1722",
+    "name": "Clutch Cable Assembly",
+    "detail": "VZ125-CLC-1722 · genuine · fits Vayu Zip 125 2017-2022",
+    "price": "₹240",
+    "type": "genuine"
+  },
+  {
+    "id": "VZ125-BSF-1722",
+    "name": "Front Brake Shoe Set (drum brake)",
+    "detail": "VZ125-BSF-1722 · genuine · fits Vayu Zip 125 2017-2022",
+    "price": "₹310",
+    "type": "genuine"
+  },
+  {
+    "id": "VZ125-AFL-1724",
+    "name": "Air Filter Element",
+    "detail": "VZ125-AFL-1724 · genuine · fits Vayu Zip 125 2017-2024",
+    "price": "₹180",
+    "type": "genuine"
+  },
+  {
+    "id": "VS150-CLC-2023",
+    "name": "Clutch Cable Assembly",
+    "detail": "VS150-CLC-2023 · genuine · fits Vayu Swift 150 2020-2023",
+    "price": "₹290",
+    "type": "genuine"
+  },
+  {
+    "id": "UNI-SPK-A7",
+    "name": "Spark Plug A7 (compatible)",
+    "detail": "UNI-SPK-A7 · compatible · fits Vayu Zip 125 2017-2024; Vayu Zip 110 2016-2022",
+    "price": "₹90",
+    "type": "compatible"
+  },
+  {
+    "id": "VZ125-HLB-1724",
+    "name": "Headlamp Bulb 35W",
+    "detail": "VZ125-HLB-1724 · genuine · fits Vayu Zip 125 2017-2024",
+    "price": "₹120",
+    "type": "genuine"
+  }
+]

@@ -1,0 +1,77 @@
+{
+  "id": "shanti_medical",
+  "name": "Shanti Medical",
+  "kind": "pharmacy",
+  "kindLabel": "Pharmacy",
+  "tagline": "The family chemist on Gandhi Road, open till 11 every night.",
+  "address": "14 Gandhi Road, Neem Chowk",
+  "area": "Neem Chowk",
+  "timezone": "Asia/Kolkata",
+  "hours": {
+    "mon": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "tue": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "wed": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "thu": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "fri": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "sat": [
+      [
+        "09:00",
+        "23:00"
+      ]
+    ],
+    "sun": [
+      [
+        "10:00",
+        "23:00"
+      ]
+    ]
+  },
+  "verified": {
+    "by": "Neem Chowk Chemists' Association (demo)",
+    "ref": "DL-NC-0142 (demo)"
+  },
+  "page": "http://localhost:8081/",
+  "network": "http://localhost:8081/shanti_medical",
+  "theme": "#9a3412",
+  "partners": [
+    {
+      "id": "night_owl_pharmacy",
+      "name": "Night Owl Pharmacy",
+      "page": "http://[::1]:8082/",
+      "network": "http://[::1]:8082/night_owl_pharmacy"
+    }
+  ],
+  "holdCallers": [
+    "http://127.0.0.1:8080",
+    "http://[::1]:8082",
+    "http://localhost:8083",
+    "http://localhost:8084",
+    "http://[::1]:8085"
+  ],
+  "nearshelf": "http://127.0.0.1:8080/"
+}

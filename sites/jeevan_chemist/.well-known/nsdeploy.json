@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "jeevan_chemist",
+      "front_man": "jeevan_chemist_assistant",
+      "aliases": [
+        "jeevan_chemist",
+        "jeevan_chemist_assistant"
+      ],
+      "url": "jeevan_chemist"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

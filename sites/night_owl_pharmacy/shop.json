@@ -1,0 +1,77 @@
+{
+  "id": "night_owl_pharmacy",
+  "name": "Night Owl Pharmacy",
+  "kind": "pharmacy",
+  "kindLabel": "Pharmacy",
+  "tagline": "Neem Chowk's 24-hour pharmacy, by the station.",
+  "address": "2 Station Road, Neem Chowk",
+  "area": "Neem Chowk",
+  "timezone": "Asia/Kolkata",
+  "hours": {
+    "mon": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "tue": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "wed": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "thu": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "fri": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "sat": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ],
+    "sun": [
+      [
+        "00:00",
+        "24:00"
+      ]
+    ]
+  },
+  "verified": {
+    "by": "Neem Chowk Chemists' Association (demo)",
+    "ref": "DL-NC-0177 (demo)"
+  },
+  "page": "http://[::1]:8082/",
+  "network": "http://[::1]:8082/night_owl_pharmacy",
+  "theme": "#3730a3",
+  "partners": [
+    {
+      "id": "shanti_medical",
+      "name": "Shanti Medical",
+      "page": "http://localhost:8081/",
+      "network": "http://localhost:8081/shanti_medical"
+    }
+  ],
+  "holdCallers": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8081",
+    "http://localhost:8083",
+    "http://localhost:8084",
+    "http://[::1]:8085"
+  ],
+  "nearshelf": "http://127.0.0.1:8080/"
+}

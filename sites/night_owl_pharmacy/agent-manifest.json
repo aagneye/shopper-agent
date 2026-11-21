@@ -1,0 +1,82 @@
+{
+  "brand": "Night Owl Pharmacy",
+  "networks": [
+    {
+      "name": "night_owl_pharmacy",
+      "front_man": "night_owl_pharmacy_assistant",
+      "hocon": "./night_owl_pharmacy.network.json",
+      "description": "Ask Night Owl Pharmacy what is in stock right now and hold an item for pickup.",
+      "tags": [
+        "agentified-website",
+        "local-shop",
+        "pharmacy"
+      ],
+      "sample_queries": [
+        "Do you have children's paracetamol syrup?",
+        "Is amoxicillin 500 mg in stock, and can it be held?",
+        "Hold one pack of ORS sachets for me.",
+        "Are you open now, and where are you?",
+        "What dose of cetirizine should I take?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [
+    "http://localhost:8081"
+  ],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Calls only its partner shop in allowed_peers, after the visitor agrees."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "night_owl_pharmacy",
+    "front_man": "night_owl_pharmacy_assistant",
+    "available": false,
+    "reason": "This is a static bundle; a public MCP facade requires an application host."
+  },
+  "theme": {
+    "primary": "#3730a3"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "night_owl_pharmacy",
+        "front_man": "night_owl_pharmacy_assistant",
+        "aliases": [
+          "night_owl_pharmacy",
+          "night_owl_pharmacy_assistant"
+        ],
+        "url": "night_owl_pharmacy"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "check_stock",
+      "get_shop_info",
+      "request_hold"
+    ]
+  }
+}

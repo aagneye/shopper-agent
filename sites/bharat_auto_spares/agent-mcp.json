@@ -1,0 +1,7 @@
+{
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "network": "bharat_auto_spares",
+  "front_man": "bharat_auto_spares_assistant",
+  "available": false,
+  "reason": "This is a static bundle; a public MCP facade requires an application host."
+}

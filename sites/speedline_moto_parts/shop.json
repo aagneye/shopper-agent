@@ -1,0 +1,77 @@
+{
+  "id": "speedline_moto_parts",
+  "name": "Speedline Moto Parts",
+  "kind": "auto_parts",
+  "kindLabel": "Vehicle parts dealer",
+  "tagline": "Two-wheeler parts, genuine and compatible, on the Ring Road service lane.",
+  "address": "Ring Road Service Lane, Neem Chowk",
+  "area": "Neem Chowk",
+  "timezone": "Asia/Kolkata",
+  "hours": {
+    "mon": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "tue": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "wed": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "thu": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "fri": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "sat": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ],
+    "sun": [
+      [
+        "09:30",
+        "21:30"
+      ]
+    ]
+  },
+  "verified": {
+    "by": "Neem Chowk Traders' Association (demo)",
+    "ref": "GST-NC-2384 (demo)"
+  },
+  "page": "http://[::1]:8085/",
+  "network": "http://[::1]:8085/speedline_moto_parts",
+  "theme": "#b91c1c",
+  "partners": [
+    {
+      "id": "bharat_auto_spares",
+      "name": "Bharat Auto Spares",
+      "page": "http://localhost:8084/",
+      "network": "http://localhost:8084/bharat_auto_spares"
+    }
+  ],
+  "holdCallers": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8081",
+    "http://[::1]:8082",
+    "http://localhost:8083",
+    "http://localhost:8084"
+  ],
+  "nearshelf": "http://127.0.0.1:8080/"
+}

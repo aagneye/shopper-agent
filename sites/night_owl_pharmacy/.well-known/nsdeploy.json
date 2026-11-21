@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "night_owl_pharmacy",
+      "front_man": "night_owl_pharmacy_assistant",
+      "aliases": [
+        "night_owl_pharmacy",
+        "night_owl_pharmacy_assistant"
+      ],
+      "url": "night_owl_pharmacy"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

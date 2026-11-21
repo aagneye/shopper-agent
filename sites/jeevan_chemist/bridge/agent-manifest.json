@@ -1,0 +1,11 @@
+{
+  "networks": [
+    {
+      "name": "jeevan_chemist"
+    }
+  ],
+  "actions": {
+    "version": 1,
+    "module": "./bridge-actions.js"
+  }
+}

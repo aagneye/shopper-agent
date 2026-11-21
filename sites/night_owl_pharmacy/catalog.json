@@ -1,0 +1,65 @@
+[
+  {
+    "id": "NO-201",
+    "name": "Paracetamol Oral Suspension (Paediatric)",
+    "detail": "120 mg/5 ml · 60 ml bottle",
+    "price": "₹38",
+    "schedule": "OTC"
+  },
+  {
+    "id": "NO-202",
+    "name": "Paracetamol Tablets",
+    "detail": "500 mg · strip of 10",
+    "price": "₹15",
+    "schedule": "OTC"
+  },
+  {
+    "id": "NO-203",
+    "name": "Oral Rehydration Salts (ORS)",
+    "detail": "21 g · sachet",
+    "price": "₹21",
+    "schedule": "OTC"
+  },
+  {
+    "id": "NO-204",
+    "name": "Amoxicillin Capsules",
+    "detail": "500 mg · strip of 10",
+    "price": "₹95",
+    "schedule": "H"
+  },
+  {
+    "id": "NO-205",
+    "name": "Cetirizine Tablets",
+    "detail": "10 mg · strip of 10",
+    "price": "₹18",
+    "schedule": "OTC"
+  },
+  {
+    "id": "NO-206",
+    "name": "Ibuprofen Oral Suspension (Paediatric)",
+    "detail": "100 mg/5 ml · 60 ml bottle",
+    "price": "₹45",
+    "schedule": "OTC"
+  },
+  {
+    "id": "NO-207",
+    "name": "Cefixime Tablets",
+    "detail": "200 mg · strip of 10",
+    "price": "₹120",
+    "schedule": "H1"
+  },
+  {
+    "id": "NO-208",
+    "name": "Ondansetron Oral Solution",
+    "detail": "2 mg/5 ml · 30 ml bottle",
+    "price": "₹52",
+    "schedule": "H"
+  },
+  {
+    "id": "NO-209",
+    "name": "Digital Thermometer",
+    "detail": "1 piece",
+    "price": "₹199",
+    "schedule": "OTC"
+  }
+]

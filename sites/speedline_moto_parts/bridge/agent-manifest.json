@@ -1,0 +1,11 @@
+{
+  "networks": [
+    {
+      "name": "speedline_moto_parts"
+    }
+  ],
+  "actions": {
+    "version": 1,
+    "module": "./bridge-actions.js"
+  }
+}

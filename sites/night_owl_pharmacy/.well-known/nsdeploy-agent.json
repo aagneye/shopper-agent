@@ -1,0 +1,7 @@
+{
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "network": "night_owl_pharmacy",
+  "front_man": "night_owl_pharmacy_assistant",
+  "available": false,
+  "reason": "This is a static bundle; a public MCP facade requires an application host."
+}

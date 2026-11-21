@@ -1,0 +1,71 @@
+{
+  "id": "bharat_auto_spares",
+  "name": "Bharat Auto Spares",
+  "kind": "auto_parts",
+  "kindLabel": "Vehicle parts dealer",
+  "tagline": "Genuine Vayu spares in Motor Market, Lane 3.",
+  "address": "Motor Market, Lane 3, Neem Chowk",
+  "area": "Neem Chowk",
+  "timezone": "Asia/Kolkata",
+  "hours": {
+    "mon": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ],
+    "tue": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ],
+    "wed": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ],
+    "thu": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ],
+    "fri": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ],
+    "sat": [
+      [
+        "10:00",
+        "20:00"
+      ]
+    ]
+  },
+  "verified": {
+    "by": "Neem Chowk Traders' Association (demo)",
+    "ref": "GST-NC-2219 (demo)"
+  },
+  "page": "http://localhost:8084/",
+  "network": "http://localhost:8084/bharat_auto_spares",
+  "theme": "#1d4ed8",
+  "partners": [
+    {
+      "id": "speedline_moto_parts",
+      "name": "Speedline Moto Parts",
+      "page": "http://[::1]:8085/",
+      "network": "http://[::1]:8085/speedline_moto_parts"
+    }
+  ],
+  "holdCallers": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8081",
+    "http://[::1]:8082",
+    "http://localhost:8083",
+    "http://[::1]:8085"
+  ],
+  "nearshelf": "http://127.0.0.1:8080/"
+}

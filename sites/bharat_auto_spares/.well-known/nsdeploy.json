@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "bharat_auto_spares",
+      "front_man": "bharat_auto_spares_assistant",
+      "aliases": [
+        "bharat_auto_spares",
+        "bharat_auto_spares_assistant"
+      ],
+      "url": "bharat_auto_spares"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

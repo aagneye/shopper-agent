@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Night Owl Pharmacy · Billing counter</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#3730a3">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/counter-page.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">Night Owl Pharmacy</a>
+    <nav class="topnav" aria-label="Shop pages">
+      <a href="./">Shop page</a>
+      <a href="dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+  <main>
+    <section class="panel" aria-labelledby="counter-heading">
+      <p class="eyebrow">Shopkeeper · demo billing counter</p>
+      <h1 id="counter-heading">Billing counter</h1>
+      <p class="muted">This stands in for the shop's billing software. Every bill updates the stock the shop's agent answers from, at once. <span id="counter-asof"></span></p>
+      <label for="counter-filter">Find an item</label>
+      <input id="counter-filter" type="search" autocomplete="off" placeholder="Name or code">
+      <p id="counter-status" class="status" role="status"></p>
+      <div class="table-wrap">
+        <table class="counter-table">
+          <thead>
+            <tr><th scope="col">Item</th><th scope="col">Price</th><th scope="col">On shelf</th><th scope="col">Held</th><th scope="col">Free</th><th scope="col"><span class="visually-hidden">Bill</span></th></tr>
+          </thead>
+          <tbody id="counter-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><p><strong>Demo.</strong> No login, because the shop is fictional. A real counter would be behind the shop's own sign-in.</p></footer>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "speedline_moto_parts",
+      "front_man": "speedline_moto_parts_assistant",
+      "aliases": [
+        "speedline_moto_parts",
+        "speedline_moto_parts_assistant"
+      ],
+      "url": "speedline_moto_parts"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

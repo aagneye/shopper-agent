@@ -1,0 +1,51 @@
+[
+  {
+    "id": "JC-301",
+    "name": "Paracetamol Oral Suspension (Paediatric)",
+    "detail": "120 mg/5 ml · 60 ml bottle",
+    "price": "₹38",
+    "schedule": "OTC"
+  },
+  {
+    "id": "JC-302",
+    "name": "Oral Rehydration Salts (ORS)",
+    "detail": "21 g · sachet",
+    "price": "₹21",
+    "schedule": "OTC"
+  },
+  {
+    "id": "JC-303",
+    "name": "Amoxicillin Capsules",
+    "detail": "500 mg · strip of 10",
+    "price": "₹95",
+    "schedule": "H"
+  },
+  {
+    "id": "JC-304",
+    "name": "Metformin Tablets",
+    "detail": "500 mg · strip of 10",
+    "price": "₹32",
+    "schedule": "H"
+  },
+  {
+    "id": "JC-305",
+    "name": "Amlodipine Tablets",
+    "detail": "5 mg · strip of 10",
+    "price": "₹40",
+    "schedule": "H"
+  },
+  {
+    "id": "JC-306",
+    "name": "Cetirizine Tablets",
+    "detail": "10 mg · strip of 10",
+    "price": "₹18",
+    "schedule": "OTC"
+  },
+  {
+    "id": "JC-307",
+    "name": "Vitamin D3 Sachet",
+    "detail": "60000 IU · 1 g sachet",
+    "price": "₹60",
+    "schedule": "OTC"
+  }
+]

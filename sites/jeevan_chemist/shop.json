@@ -1,0 +1,77 @@
+{
+  "id": "jeevan_chemist",
+  "name": "Jeevan Chemist",
+  "kind": "pharmacy",
+  "kindLabel": "Pharmacy",
+  "tagline": "Your chemist in Gulmohar Market, for everyday medicines.",
+  "address": "Shop 5, Gulmohar Market, Neem Chowk",
+  "area": "Neem Chowk",
+  "timezone": "Asia/Kolkata",
+  "hours": {
+    "mon": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "tue": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "wed": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "thu": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "fri": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "sat": [
+      [
+        "08:30",
+        "21:00"
+      ]
+    ],
+    "sun": [
+      [
+        "09:00",
+        "14:00"
+      ]
+    ]
+  },
+  "verified": {
+    "by": "Neem Chowk Chemists' Association (demo)",
+    "ref": "DL-NC-0093 (demo)"
+  },
+  "page": "http://localhost:8083/",
+  "network": "http://localhost:8083/jeevan_chemist",
+  "theme": "#047857",
+  "partners": [
+    {
+      "id": "night_owl_pharmacy",
+      "name": "Night Owl Pharmacy",
+      "page": "http://[::1]:8082/",
+      "network": "http://[::1]:8082/night_owl_pharmacy"
+    }
+  ],
+  "holdCallers": [
+    "http://127.0.0.1:8080",
+    "http://localhost:8081",
+    "http://[::1]:8082",
+    "http://localhost:8084",
+    "http://[::1]:8085"
+  ],
+  "nearshelf": "http://127.0.0.1:8080/"
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bharat Auto Spares · Shopkeeper dashboard</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/dashboard-page.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">Bharat Auto Spares</a>
+    <nav class="topnav" aria-label="Shop pages">
+      <a href="./">Shop page</a>
+      <a href="counter.html">Counter</a>
+    </nav>
+  </header>
+  <main>
+    <p class="eyebrow">Shopkeeper</p>
+    <h1>Dashboard</h1>
+    <p id="dash-status" class="status" role="status"></p>
+    <div class="dash-grid">
+      <section class="panel" aria-labelledby="holds-heading">
+        <h2 id="holds-heading">Holds to set aside</h2>
+        <p id="dash-holds-empty" class="muted">No holds yet.</p>
+        <ul id="dash-holds" class="dash-list"></ul>
+      </section>
+      <section class="panel" aria-labelledby="missed-heading">
+        <h2 id="missed-heading">Missed demand</h2>
+        <p class="small muted">What people asked for that you didn't have. Restock what keeps coming up.</p>
+        <p id="dash-missed-empty" class="muted">Nothing missed yet.</p>
+        <ul id="dash-missed" class="dash-list"></ul>
+      </section>
+      <section class="panel" aria-labelledby="low-heading">
+        <h2 id="low-heading">Running low</h2>
+        <p id="dash-low-empty" class="muted">Nothing is running low.</p>
+        <ul id="dash-low" class="dash-list"></ul>
+      </section>
+    </div>
+    <p><button id="dash-reset" class="secondary" type="button">Reset demo stock</button></p>
+  </main>
+  <footer class="footer"><p><strong>Demo.</strong> Names show as a first name and phones as their last two digits. A real dashboard would be behind the shop's own sign-in.</p></footer>
+</body>
+</html>

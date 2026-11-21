@@ -1,0 +1,44 @@
+[
+  {
+    "id": "VZ125-CLC-1722",
+    "name": "Clutch Cable Assembly",
+    "detail": "VZ125-CLC-1722 · genuine · fits Vayu Zip 125 2017-2022",
+    "price": "₹250",
+    "type": "genuine"
+  },
+  {
+    "id": "NX-CC-125A",
+    "name": "Clutch Cable (compatible)",
+    "detail": "NX-CC-125A · compatible · fits Vayu Zip 125 2017-2022",
+    "price": "₹160",
+    "type": "compatible"
+  },
+  {
+    "id": "VZ125-AFL-1724",
+    "name": "Air Filter Element",
+    "detail": "VZ125-AFL-1724 · genuine · fits Vayu Zip 125 2017-2024",
+    "price": "₹185",
+    "type": "genuine"
+  },
+  {
+    "id": "VZ125-CHK-1722",
+    "name": "Chain Kit 428",
+    "detail": "VZ125-CHK-1722 · genuine · fits Vayu Zip 125 2017-2022",
+    "price": "₹1,450",
+    "type": "genuine"
+  },
+  {
+    "id": "VZ125-BPF-1722",
+    "name": "Front Disc Brake Pad Set (disc brake)",
+    "detail": "VZ125-BPF-1722 · genuine · fits Vayu Zip 125 2017-2022",
+    "price": "₹420",
+    "type": "genuine"
+  },
+  {
+    "id": "UNI-SPK-A7",
+    "name": "Spark Plug A7 (compatible)",
+    "detail": "UNI-SPK-A7 · compatible · fits Vayu Zip 125 2017-2024; Vayu Zip 110 2016-2022",
+    "price": "₹95",
+    "type": "compatible"
+  }
+]

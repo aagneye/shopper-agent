@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "shanti_medical",
+      "front_man": "shanti_medical_assistant",
+      "aliases": [
+        "shanti_medical",
+        "shanti_medical_assistant"
+      ],
+      "url": "shanti_medical"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}
