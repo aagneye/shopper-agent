@@ -4,13 +4,13 @@ import catalog from "../catalog.json" with { type: "json" };
 
 export const STOCK_TOOL = {
   name: "check_stock",
-  description: "Check what this shop has in stock right now, from its live billing stock. Pass the item as the visitor said it, or a part number. Returns the best matches with availability (in_stock, limited or out_of_stock), price, hold (yes, no or prescription) and asOf, the time the stock was read. Call it for every stock question, and again in each turn that needs it.",
+  description: "Check what this shop has in stock right now, from its live billing stock. Pass only the item (name, strength, form) or part numbers, one call per item. Returns the best matches with availability (in_stock, limited or out_of_stock), price, hold (yes, no or prescription) and asOf, the time the stock was read. Call it for every stock question, and again in each turn that needs it.",
   inputSchema: {
     type: "object",
     additionalProperties: false,
     required: ["query"],
     properties: {
-      query: { type: "string", minLength: 1, maxLength: 80, description: "The item as the visitor said it, or a part number." },
+      query: { type: "string", minLength: 1, maxLength: 80, description: "Only the item, such as \"paracetamol syrup 120 mg\", or part numbers." },
     },
   },
 };

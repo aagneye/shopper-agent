@@ -64,6 +64,30 @@ test("plural and short forms still match, such as ORS sachets", async () => {
   assert.equal(result.matches[0].match, "full");
 });
 
+test("doses written together with their unit still match fully", async () => {
+  const stock = await items("shanti_medical");
+  for (const [query, id] of [
+    ["paracetamol 500mg", "SM-1002"],
+    ["amoxicillin 500mg", "SM-1005"],
+    ["cetirizine 10mg", "SM-1006"],
+    ["children's paracetamol syrup 60ml", "SM-1001"],
+  ]) {
+    const result = searchStock(stock, query);
+    assert.equal(result.matches[0].item.id, id, query);
+    assert.equal(result.matches[0].match, "full", query);
+  }
+});
+
+test("a part number inside a sentence, or several of them, match exactly", async () => {
+  const bharat = await items("bharat_auto_spares");
+  const asked = searchStock(bharat, "Do you have part VZ125-CLC-1722?");
+  assert.deepEqual(asked.matches.map((entry) => [entry.item.id, entry.match]), [["VZ125-CLC-1722", "full"]]);
+  assert.equal(searchStock(bharat, "part no. VZ125-CLC-1722").matches[0].item.id, "VZ125-CLC-1722");
+  const speedline = await items("speedline_moto_parts");
+  const both = searchStock(speedline, "VZ125-CLC-1722 or NX-CC-125A");
+  assert.deepEqual(both.matches.map((entry) => [entry.item.id, entry.match]), [["VZ125-CLC-1722", "full"], ["NX-CC-125A", "full"]]);
+});
+
 test("an empty query is refused and junk finds nothing", async () => {
   const stock = await items("shanti_medical");
   assert.equal(searchStock(stock, "   ").ok, false);

@@ -9,8 +9,9 @@ const SCHEDULES = ["OTC", "H", "H1", "X"];
 const PART_TYPES = ["genuine", "compatible"];
 const MOST_MATCHES = 5;
 const STOP_WORDS = new Set([
-  "a", "an", "and", "any", "available", "do", "for", "get", "have", "i", "in", "is", "it",
-  "me", "my", "need", "of", "please", "some", "stock", "the", "there", "to", "want", "with", "you",
+  "a", "an", "and", "any", "available", "both", "do", "either", "for", "get", "have", "i", "in",
+  "is", "it", "me", "my", "need", "no", "number", "of", "or", "part", "please", "some", "spare",
+  "stock", "the", "there", "to", "want", "with", "you",
 ]);
 // Words shoppers use, and the words billing exports use for the same thing.
 const SYNONYMS = {
@@ -70,6 +71,8 @@ export function words(text) {
   return String(text ?? "")
     .toLowerCase()
     .replace(/'s\b/g, "")
+    // A dose written with its unit, such as "500mg", reads as "500 mg".
+    .replace(/(\d)([a-z])/g, "$1 $2")
     .split(/[^a-z0-9]+/)
     .filter(Boolean)
     .map((word) => (word.length > 3 && word.endsWith("s") && !word.endsWith("ss") ? word.slice(0, -1) : word));
@@ -245,9 +248,18 @@ function tokenMatches(token, item) {
  */
 export function searchStock(items, query) {
   const text = String(query ?? "").trim();
-  const exact = items.find((item) => item.id.toLowerCase() === text.toLowerCase());
-  if (exact) {
-    return { ok: true, matches: [{ item: exact, score: 1, match: "full" }] };
+  // Item codes and part numbers match exactly wherever they appear, such as
+  // "Do you have part VZ125-CLC-1722?" or "VZ125-CLC-1722 or NX-CC-125A".
+  const exact = [];
+  for (const chunk of text.split(/[\s,;]+/)) {
+    const code = chunk.replace(/^[("'[]+|[)"'\].?!:]+$/g, "").toLowerCase();
+    const item = items.find((candidate) => candidate.id.toLowerCase() === code);
+    if (item && !exact.includes(item)) {
+      exact.push(item);
+    }
+  }
+  if (exact.length) {
+    return { ok: true, matches: exact.slice(0, MOST_MATCHES).map((item) => ({ item, score: 1, match: "full" })) };
   }
   const significant = [...new Set(words(text).filter((word) => !STOP_WORDS.has(word)))];
   if (significant.length === 0) {
