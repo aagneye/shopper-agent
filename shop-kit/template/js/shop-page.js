@@ -82,13 +82,26 @@ export class ShopPage {
     dialog.setAttribute("aria-label", `Hold ${item.name}`);
     this.doc.body.append(dialog);
     const form = new HoldForm({ doc: this.doc, container: dialog, api: this.api, item, qty, intro: null, until: check.until });
-    // Escape closes a dialog without its buttons: treat it as Cancel.
-    dialog.addEventListener("cancel", () => form.cancel());
+    // Escape closes a dialog without its buttons: treat it as Cancel. While the hold is
+    // being sent, the dialog stays open for the shop's answer.
+    dialog.addEventListener("cancel", (event) => {
+      if (form.pending) {
+        event.preventDefault();
+      } else {
+        form.cancel();
+      }
+    });
     dialog.showModal();
-    const result = await form.result;
-    dialog.close();
-    dialog.remove();
-    return this.holdOutcome(result);
+    try {
+      return this.holdOutcome(await form.result);
+    } catch (error) {
+      // The outcome is unknown: say so here, and fail so the assistant reports it as unknown.
+      this.el["stock-status"].textContent = error.message;
+      throw error;
+    } finally {
+      dialog.close();
+      dialog.remove();
+    }
   }
 
   /**
@@ -147,7 +160,8 @@ export class ShopPage {
       if (match.hold !== "no") {
         const hold = el(this.doc, "button", "secondary", "Hold 1");
         hold.setAttribute("type", "button");
-        hold.addEventListener("click", () => this.requestHold({ itemId: match.id, qty: 1 }));
+        // An unknown outcome is already shown under the search, so there is nothing more to do.
+        hold.addEventListener("click", () => this.requestHold({ itemId: match.id, qty: 1 }).catch(() => {}));
         card.append(hold);
       }
       return card;

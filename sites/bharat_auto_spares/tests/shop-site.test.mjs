@@ -53,7 +53,8 @@ const api = createShopApi({
 shopApi.transport = async (method, path, query, body) => (await api.handle({ method, path, query: query || {}, body: body ?? null })).body;
 App.clock = () => FRIDAY_NOON;
 App.page.refresh();
-const HOLDABLE = items.find((item) => item.qty > 0 && !["H", "H1", "X"].includes(item.schedule));
+// The item without a prescription rule that the shop has most of, so every hold test has stock.
+const HOLDABLE = items.filter((item) => !["H", "H1", "X"].includes(item.schedule)).sort((a, b) => b.qty - a.qty)[0];
 const SAMPLE_QUERY = shop.kind === "pharmacy" ? "paracetamol" : "clutch cable";
 
 /**
@@ -125,6 +126,59 @@ async function holdDialog(before) {
   }
   throw new Error("The hold form did not open.");
 }
+
+/**
+ * Wait until page code that runs after an event has caught up.
+ *
+ * :param check: Returns something truthy when it has.
+ * :return: What check returned.
+ */
+async function until(check) {
+  for (let turn = 0; turn < 100; turn += 1) {
+    const value = check();
+    if (value) {
+      return value;
+    }
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  throw new Error("The page did not get there.");
+}
+
+/**
+ * Open the hold form for the item with the most stock and send the visitor's details.
+ *
+ * :return: {pending, dialog}, where pending is requestHold's promise.
+ */
+async function sendHold() {
+  const children = document.body.children.length;
+  const pending = App.page.requestHold({ itemId: HOLDABLE.id, qty: 1 });
+  const dialog = await holdDialog(children);
+  findById(dialog, "hold-name").value = VISITOR.name;
+  findById(dialog, "hold-phone").value = VISITOR.phone;
+  findById(dialog, "hold-form").dispatch("submit");
+  return { pending, dialog };
+}
+
+/**
+ * Run a test with the shop API's transport wrapped, then put it back.
+ *
+ * :param wrap: Takes the real transport and returns the one to use.
+ * :param body: The test, an async function.
+ */
+async function withTransport(wrap, body) {
+  const real = shopApi.transport;
+  shopApi.transport = wrap(real);
+  try {
+    await body();
+  } finally {
+    shopApi.transport = real;
+  }
+}
+
+/**
+ * True for the request that takes a hold.
+ */
+const isHoldPost = (method, path) => method === "POST" && path === "/api/holds";
 
 test("the network is valid and keeps its grounding, reply and partner rules", async () => {
   const loaded = await load();
@@ -226,6 +280,70 @@ test("a cancelled hold holds nothing", async () => {
   const result = await pending;
   assert.equal(result.ok, false);
   assert.equal((await shopApi.holds()).holds.length, before);
+});
+
+test("Cancel and Escape wait while a hold is being sent, so the result is the shop's answer", async () => {
+  let letThrough;
+  const gate = new Promise((resolve) => {
+    letThrough = resolve;
+  });
+  await withTransport((real) => async (method, path, query, body) => {
+    if (isHoldPost(method, path)) {
+      await gate;
+    }
+    return real(method, path, query, body);
+  }, async () => {
+    const before = (await shopApi.holds()).holds.length;
+    const { pending, dialog } = await sendHold();
+    const cancel = findById(dialog, "hold-cancel");
+    assert.equal(cancel.disabled, true, "Cancel stays enabled while the hold is being sent.");
+    cancel.dispatch("click");
+    dialog.pressEscape();
+    assert.equal(dialog.open, true, "Escape closed the form while the hold was being sent.");
+    letThrough();
+    const result = await pending;
+    assert.equal(result.ok, true, result.reason);
+    assert.equal((await shopApi.holds()).holds.length, before + 1);
+  });
+});
+
+test("a hold whose answer was lost can be sent again without holding twice", async () => {
+  let dropped = false;
+  await withTransport((real) => async (method, path, query, body) => {
+    const answer = await real(method, path, query, body);
+    if (isHoldPost(method, path) && !dropped) {
+      dropped = true;
+      throw new Error("The connection dropped.");
+    }
+    return answer;
+  }, async () => {
+    const before = (await shopApi.holds()).holds.length;
+    const { pending, dialog } = await sendHold();
+    const error = await until(() => findById(dialog, "hold-error").textContent);
+    assert.match(error, /may have been taken/);
+    findById(dialog, "hold-form").dispatch("submit");
+    const result = await pending;
+    assert.equal(result.ok, true, result.reason);
+    const holds = (await shopApi.holds()).holds;
+    assert.equal(holds.length, before + 1);
+    assert.equal(holds[0].code, result.code);
+  });
+});
+
+test("a hold whose answer was lost, then cancelled, is reported as unknown, not as nothing held", async () => {
+  await withTransport((real) => async (method, path, query, body) => {
+    const answer = await real(method, path, query, body);
+    if (isHoldPost(method, path)) {
+      throw new Error("The connection dropped.");
+    }
+    return answer;
+  }, async () => {
+    const { pending, dialog } = await sendHold();
+    await until(() => findById(dialog, "hold-error").textContent);
+    findById(dialog, "hold-cancel").dispatch("click");
+    await assert.rejects(pending, /may have been taken/);
+    assert.equal(dialog.open, false);
+  });
 });
 
 test("the shop facts name each partner shop with its link", () => {

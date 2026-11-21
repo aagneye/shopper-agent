@@ -156,6 +156,17 @@ test("a hold refused for the item says so before checking the details", async ()
   assert.deepEqual(body, { ok: false, field: "qty", reason: "None left to hold." });
 });
 
+test("the same hold request sent again gets the same hold, not a second one", async () => {
+  const { api } = await shop("shanti_medical");
+  const request = { requestId: "form-2f6b1c9e", itemId: "SM-1001", qty: 2, ...ASHA };
+  const first = await post(api, "/api/holds", request);
+  assert.equal(first.body.ok, true, first.body.reason);
+  assert.deepEqual((await post(api, "/api/holds", request)).body, first.body);
+  assert.equal((await get(api, "/api/holds")).body.holds.length, 1);
+  assert.equal((await post(api, "/api/holds", { ...request, qty: 1 })).body.field, "requestId");
+  assert.equal((await post(api, "/api/holds", { ...request, requestId: "x" })).body.field, "requestId");
+});
+
 test("collecting a hold bills its units once", async () => {
   const { api } = await shop("shanti_medical");
   const { body: held } = await post(api, "/api/holds", { itemId: "SM-1001", qty: 1, ...ASHA });

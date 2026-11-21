@@ -225,12 +225,47 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
-   * POST /api/holds {itemId, qty, name, phone}: hold items for pickup until closing.
-   * The shop's rules for the item come first, then the shopper's details, which stay
-   * here; the answer has only the code and what is held.
+   * The answer for a hold that was taken: the code and what is held, never the details.
+   *
+   * :param hold: The hold as stored.
+   * :param item: Its item.
+   * :return: The response.
+   */
+  function holdAnswer(hold, item) {
+    const prescription = item.schedule === "H" || item.schedule === "H1";
+    const what = `${hold.qty} × ${item.name}${item.detail ? ` (${item.detail})` : ""}`;
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        code: hold.code,
+        until: hold.until,
+        summary: `${what} held at ${profile.name} until ${hold.until}.`,
+        prescription,
+        ...(prescription ? { note: "Bring the prescription: the pharmacist checks it at the counter." } : {}),
+      },
+    };
+  }
+
+  /**
+   * POST /api/holds {requestId, itemId, qty, name, phone}: hold items for pickup until
+   * closing. The same requestId sent again, after an answer was lost, gets the same hold
+   * back instead of a second one. The shop's rules for the item come next, then the
+   * shopper's details, which stay here; the answer has only the code and what is held.
    */
   async function createHold({ body }) {
     const state = await store.get();
+    const requestId = body.requestId ?? null;
+    if (requestId !== null && (typeof requestId !== "string" || !/^[A-Za-z0-9-]{8,100}$/.test(requestId))) {
+      return refuse("requestId", "Send a request id of 8 to 100 letters, digits or dashes.");
+    }
+    const earlier = requestId && state.holds.find((hold) => hold.requestId === requestId);
+    if (earlier) {
+      if (earlier.itemId !== body.itemId || earlier.qty !== body.qty) {
+        return refuse("requestId", "That request id was used for another hold.");
+      }
+      return holdAnswer(earlier, state.items.find((item) => item.id === earlier.itemId) || { name: earlier.item, detail: "" });
+    }
     const rules = holdRules(state, body.itemId, body.qty);
     if (rules.refusal) {
       return rules.refusal;
@@ -243,10 +278,9 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     if (!phone) {
       return refuse("phone", "Enter a 10-digit mobile number.");
     }
-    const { item, untilDate, until, prescription } = rules;
-    const code = newCode(state);
-    state.holds.push({
-      code,
+    const { item, untilDate, until } = rules;
+    const hold = {
+      code: newCode(state),
       itemId: item.id,
       item: item.name,
       qty: body.qty,
@@ -255,21 +289,12 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
       at: clock().toISOString(),
       untilIso: untilDate.toISOString(),
       until,
-    });
+      ...(requestId ? { requestId } : {}),
+    };
+    state.holds.push(hold);
     state.holds.splice(0, Math.max(0, state.holds.length - MOST_LOGGED));
     await store.set(state);
-    const what = `${body.qty} × ${item.name}${item.detail ? ` (${item.detail})` : ""}`;
-    return {
-      status: 200,
-      body: {
-        ok: true,
-        code,
-        until,
-        summary: `${what} held at ${profile.name} until ${until}.`,
-        prescription,
-        ...(prescription ? { note: "Bring the prescription: the pharmacist checks it at the counter." } : {}),
-      },
-    };
+    return holdAnswer(hold, item);
   }
 
   /**

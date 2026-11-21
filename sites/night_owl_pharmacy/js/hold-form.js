@@ -20,10 +20,29 @@ export class HoldForm {
     this.item = item;
     this.qty = qty;
     this.done = false;
-    this.result = new Promise((resolve) => {
+    // True while the shop has the request and has not answered yet.
+    this.pending = false;
+    // True after an answer was lost: the shop may have taken the hold.
+    this.uncertain = false;
+    // Sent with every try, so the shop answers a repeat with the same hold.
+    this.requestId = HoldForm.newRequestId();
+    this.result = new Promise((resolve, reject) => {
       this.resolve = resolve;
+      this.reject = reject;
     });
     this.build(intro, until);
+  }
+
+  /**
+   * A new id for one hold request.
+   *
+   * :return: A random id of letters, digits and dashes.
+   */
+  static newRequestId() {
+    if (globalThis.crypto?.randomUUID) {
+      return globalThis.crypto.randomUUID();
+    }
+    return `hold-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
   }
 
   /**
@@ -58,17 +77,17 @@ export class HoldForm {
     this.confirm = el(doc, "button", "primary", "Hold it");
     this.confirm.id = "hold-confirm";
     this.confirm.setAttribute("type", "submit");
-    const cancel = el(doc, "button", "secondary", "Cancel");
-    cancel.id = "hold-cancel";
-    cancel.setAttribute("type", "button");
+    this.cancelButton = el(doc, "button", "secondary", "Cancel");
+    this.cancelButton.id = "hold-cancel";
+    this.cancelButton.setAttribute("type", "button");
     const actions = el(doc, "div", "hold-actions");
-    actions.append(this.confirm, cancel);
+    actions.append(this.confirm, this.cancelButton);
     form.append(...parts, this.error, actions);
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       return this.submit();
     });
-    cancel.addEventListener("click", () => this.cancel());
+    this.cancelButton.addEventListener("click", () => this.cancel());
     this.container.replaceChildren(form);
   }
 
@@ -95,24 +114,34 @@ export class HoldForm {
   }
 
   /**
-   * Send the hold to the shop. Mistakes in the details stay on the form to fix; a refusal
-   * about the item itself ends the request.
+   * Send the hold to the shop. Both buttons wait until it answers. Mistakes in the details
+   * stay on the form to fix; a refusal about the item itself ends the request.
    *
    * :return: A promise that settles when the shop has answered.
    */
   async submit() {
-    if (this.done) {
+    if (this.done || this.pending) {
       return;
     }
+    this.pending = true;
     this.confirm.disabled = true;
+    this.cancelButton.disabled = true;
     let answer;
     try {
-      answer = await this.api.createHold({ itemId: this.item.id, qty: this.qty, name: this.name.value, phone: this.phone.value });
+      answer = await this.api.createHold({ requestId: this.requestId, itemId: this.item.id, qty: this.qty, name: this.name.value, phone: this.phone.value });
     } catch {
-      this.confirm.disabled = false;
-      this.error.textContent = "The shop could not be reached. Try again.";
+      // The shop may have taken the hold before its answer was lost. Sending again is safe:
+      // the same request id gets the same hold back, not a second one.
+      this.uncertain = true;
+      this.error.textContent = "The shop's answer did not arrive, so the hold may have been taken. Press Hold it again to check: you will not get two holds.";
       return;
+    } finally {
+      this.pending = false;
+      this.confirm.disabled = false;
+      this.cancelButton.disabled = false;
     }
+    // The shop answered, so whether a hold was taken is known again.
+    this.uncertain = false;
     if (answer.ok) {
       const view = el(this.doc, "section", "hold-done");
       view.append(el(this.doc, "h2", "", `Held: ${answer.code}`), el(this.doc, "p", "", answer.summary));
@@ -130,7 +159,6 @@ export class HoldForm {
       }, view);
       return;
     }
-    this.confirm.disabled = false;
     this.error.textContent = answer.reason;
     if (answer.field === "itemId" || answer.field === "qty") {
       this.finish({ ok: false, reason: answer.reason }, null);
@@ -138,12 +166,21 @@ export class HoldForm {
   }
 
   /**
-   * End without holding anything.
+   * End the request without holding anything. Ignored while the shop is answering. After
+   * a lost answer the hold may exist, so the asker is told the outcome is unknown.
    */
   cancel() {
-    if (!this.done) {
-      this.finish({ ok: false, reason: "The visitor cancelled. Nothing was held." }, null);
+    if (this.done || this.pending) {
+      return;
     }
+    if (this.uncertain) {
+      const reason = "The shop's answer did not arrive, so the hold may have been taken. Check with the shop before asking again.";
+      const view = el(this.doc, "section", "hold-done");
+      view.append(el(this.doc, "h2", "", "Not confirmed"), el(this.doc, "p", "", reason));
+      this.finish(null, view, new Error(reason));
+      return;
+    }
+    this.finish({ ok: false, reason: "The visitor cancelled. Nothing was held." }, null);
   }
 
   /**
@@ -151,12 +188,17 @@ export class HoldForm {
    *
    * :param result: What the asker gets back.
    * :param view: The element to show in place of the form, or null.
+   * :param error: When the outcome is unknown, the error the request fails with.
    */
-  finish(result, view) {
+  finish(result, view, error = null) {
     this.done = true;
     if (view) {
       this.container.replaceChildren(view);
     }
-    this.resolve(result);
+    if (error) {
+      this.reject(error);
+    } else {
+      this.resolve(result);
+    }
   }
 }
