@@ -2,7 +2,7 @@
 // it by this same URL, so the page and the agent share one page object, App.page.
 import directory from "../directory/neem-chowk.json" with { type: "json" };
 import { validateDirectory } from "./directory.js";
-import { ProfileStore } from "./profile-store.js";
+import { PROFILE_KEY, ProfileStore } from "./profile-store.js";
 import { ShopperPage } from "./shopper-page.js";
 
 /**
@@ -36,6 +36,12 @@ export class App {
     if (typeof window !== "undefined") {
       // Open and closed labels change with the clock.
       setInterval(() => App.page.tick(), 30000);
+      // Another NearShelf tab saved the profile: show its holds, vehicles and list here too.
+      window.addEventListener("storage", (event) => {
+        if (event.key === PROFILE_KEY && App.page.store.reload()) {
+          App.page.refresh();
+        }
+      });
     }
     return App.page;
   }

@@ -64,6 +64,43 @@ test("two stores sharing one storage see each other's saves", () => {
   assert.equal(second.profile.vehicles[0].label, "Vayu Zip 125 (2019, drum brake)");
 });
 
+test("two tabs open at the same time keep each other's saves", () => {
+  const storage = new MemoryStorage();
+  const tabA = new ProfileStore(storage);
+  const tabB = new ProfileStore(storage);
+  tabA.addHold({ shopId: "shanti_medical", shopName: "Shanti Medical", item: "Paracetamol syrup", code: "H-4821", until: "11:00 pm" });
+  tabB.addVehicle(ZIP);
+  tabB.setDemoTime("22:45");
+  tabA.addListItem({ name: "ORS sachets", qty: "2" });
+  const fresh = new ProfileStore(storage);
+  assert.deepEqual(fresh.profile.holds.map((hold) => hold.code), ["H-4821"]);
+  assert.deepEqual(fresh.profile.vehicles.map((vehicle) => vehicle.label), ["Vayu Zip 125 (2019, drum brake)"]);
+  assert.equal(fresh.profile.demoTime, "22:45");
+  assert.deepEqual(fresh.profile.list.map((item) => item.label), ["ORS sachets × 2"]);
+});
+
+test("a tab picks up another tab's saves when it reloads", () => {
+  const storage = new MemoryStorage();
+  const tabA = new ProfileStore(storage);
+  const tabB = new ProfileStore(storage);
+  tabA.addHold({ shopId: "night_owl_pharmacy", shopName: "Night Owl Pharmacy", item: "ORS sachets", code: "H-7310", until: "" });
+  assert.equal(tabB.reload(), true);
+  assert.deepEqual(tabB.profile.holds.map((hold) => hold.code), ["H-7310"]);
+});
+
+test("when saving keeps failing, earlier unsaved changes stay in memory", () => {
+  class FullStorage extends MemoryStorage {
+    setItem() {
+      throw new Error("QuotaExceededError");
+    }
+  }
+  const store = new ProfileStore(new FullStorage());
+  assert.equal(store.addVehicle(ZIP).saved, false);
+  store.addListItem({ name: "ORS sachets", qty: "" });
+  assert.equal(store.profile.vehicles.length, 1);
+  assert.equal(store.profile.list.length, 1);
+});
+
 test("a vehicle needs a maker, a model and a year from 1980 to 2027", () => {
   const store = new ProfileStore(null);
   assert.deepEqual(store.addVehicle({ ...ZIP, year: 1979 }), { ok: false, field: "year", reason: "Enter a year from 1980 to 2027." });

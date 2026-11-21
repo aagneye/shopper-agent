@@ -71,8 +71,11 @@ export class ProfileStore {
    */
   constructor(storage = ProfileStore.browserStorage()) {
     this.storage = storage || null;
-    this.persisted = false;
-    this.data = this.load();
+    const loaded = this.read();
+    this.data = loaded.profile;
+    // True while storage holds this tab's latest profile. Each change then re-reads it
+    // first, so a save never erases what another open tab saved.
+    this.persisted = loaded.ok;
   }
 
   /**
@@ -89,24 +92,51 @@ export class ProfileStore {
   }
 
   /**
+   * Read the saved profile again, for example when another tab saved it.
+   *
+   * :return: True when storage could be read and its profile is now this tab's.
+   */
+  reload() {
+    const loaded = this.read();
+    if (!loaded.ok) {
+      return false;
+    }
+    this.data = loaded.profile;
+    this.persisted = true;
+    return true;
+  }
+
+  /**
+   * Before a change, start from the saved profile, so another tab's saves survive.
+   * While saving fails, memory is the only copy, so it is kept as it is.
+   */
+  sync() {
+    if (this.persisted) {
+      this.reload();
+    }
+  }
+
+  /**
    * Read and sanitize the saved profile.
    *
-   * :return: A complete profile.
+   * :return: {ok, profile}: ok is false when there is no storage or it cannot be read,
+   *   and profile is then the defaults.
    */
-  load() {
+  read() {
     const profile = defaults();
     if (!this.storage) {
-      return profile;
+      return { ok: false, profile };
     }
     let saved = null;
     try {
       saved = JSON.parse(this.storage.getItem(PROFILE_KEY) || "null");
-      this.persisted = true;
     } catch {
-      return profile;
+      // A blocked getItem and corrupt JSON both land here. Corrupt JSON is overwritten
+      // by the next save, so only a blocked storage keeps ok false.
+      return { ok: this.canRead(), profile };
     }
     if (!saved || saved.version !== 1) {
-      return profile;
+      return { ok: true, profile };
     }
     if (typeof saved.spotId === "string" && saved.spotId) {
       profile.spotId = saved.spotId;
@@ -117,7 +147,21 @@ export class ProfileStore {
     profile.vehicles = records(saved.vehicles, ["maker", "model", "label"]);
     profile.list = records(saved.list, ["name", "label"]);
     profile.holds = records(saved.holds, ["shopId", "item", "code"]);
-    return profile;
+    return { ok: true, profile };
+  }
+
+  /**
+   * True when storage answers getItem without throwing.
+   *
+   * :return: Whether storage can be read.
+   */
+  canRead() {
+    try {
+      this.storage.getItem(PROFILE_KEY);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -155,6 +199,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, vehicle, vehicles} or {ok: false, field, reason}.
    */
   addVehicle({ maker, model, year, variant }) {
+    this.sync();
     const cleanMaker = clean(maker);
     const cleanModel = clean(model);
     const cleanVariant = clean(variant);
@@ -198,6 +243,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, item, list} or {ok: false, field, reason}.
    */
   addListItem({ name, qty }) {
+    this.sync();
     const cleanName = clean(name);
     const cleanQty = clean(qty);
     if (!cleanName || cleanName.length > 80) {
@@ -233,6 +279,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, duplicate, hold, holds} or {ok: false, field, reason}.
    */
   addHold({ shopId, shopName, item, code, until }) {
+    this.sync();
     const cleanItem = clean(item);
     const cleanCode = clean(code);
     if (!clean(shopId)) {
@@ -282,6 +329,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, spotId} or {ok: false, field, reason}.
    */
   setSpot(spotId) {
+    this.sync();
     const id = clean(spotId);
     if (!id) {
       return { ok: false, field: "spotId", reason: "Pick a spot." };
@@ -297,6 +345,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, demoTime} or {ok: false, field, reason}.
    */
   setDemoTime(value) {
+    this.sync();
     if (value !== null) {
       const minutes = parseHHMM(value);
       if (minutes === null || minutes >= 1440) {
@@ -315,6 +364,7 @@ export class ProfileStore {
    * :return: {ok: true, saved, [listName]} or {ok: false, field, reason}.
    */
   remove(listName, id) {
+    this.sync();
     const index = this.data[listName].findIndex((entry) => entry.id === id);
     if (index === -1) {
       return { ok: false, field: "id", reason: "That item is not saved." };
