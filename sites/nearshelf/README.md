@@ -7,7 +7,7 @@ NearShelf is the shopper's own agent site in the Neem Chowk demo. You tell it wh
 - puts the answers on a results board, with the time each shop checked its stock;
 - keeps any hold code a shop gives you.
 
-Your saved details (spot, vehicles, regular medicines, holds) stay in this browser.
+Your saved details (spot, vehicles, regular medicines, holds) are stored only in this browser and never sent to shops. When the assistant reads them, they go to the AI provider you choose, along with your messages.
 
 Neem Chowk is fictional. Every shop, licence, brand and stock level is made up.
 
@@ -35,7 +35,7 @@ The page works without a key: you can browse shops, set your spot and demo time,
 | Your messages and the page data the agent reads | The AI provider you choose in the settings, and nowhere else |
 | A request to a shop, such as "Do you have ORS sachets?" | That shop's agent network, after you approve its consent card |
 | Your name and phone for a hold | Typed in the shop's own window, so they never pass through an agent |
-| Spot, vehicles, list, holds | This browser only (localStorage `nearshelf.profile.v1`) |
+| Spot, vehicles, list, holds | Stored in this browser only (localStorage `nearshelf.profile.v1`). They reach the AI provider only when the assistant reads them |
 
 ## The agent network
 
@@ -74,7 +74,7 @@ NearShelf asks these partner networks. They are built in phase 2 of the project.
 How the consent card works:
 
 - Before any contact, a card names the shop, its host and the first 140 characters of the request. **Always allow** skips the card for that host until the page is reloaded.
-- A request names the item, its strength or part number, and the quantity. The agent is told never to put names, phone numbers, emails, addresses or hold codes in a request. The runtime does not filter requests, so check what the card shows.
+- A request names the item, its strength or part number, and the quantity. The agent is told to ask a shop only about the item, and never to put names, emails, phone numbers or booking codes in a request. The runtime does not filter requests, so check what the card shows.
 - A shop's network runs in this browser on your AI provider and key. It gets only the actions that shop's own bridge shares with NearShelf.
 - A call costs more than the card's token estimate.
 

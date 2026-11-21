@@ -122,7 +122,7 @@ The parts act is the first thing to shrink, down to a 15-second proof, but it is
    - **Parts:** the agent turns "clutch cable, 2019 scooter" into the exact part number by asking a parts-catalogue agent. Only then does it ask the dealers, so you no longer have to carry the old part to show them.
    - **Medicines:** the agent understands brand versus composition (the salt). It may show "same composition available at X" as information only, with "ask your doctor or pharmacist before switching". It never gives dosage or medical advice.
 7. **Private by design (no lead-selling).**
-   - Shops see only what was asked, never who asked.
+   - Shops see only what was asked, not who asked, unless the shopper chooses to hold an item.
    - Your saved details (area, medicine list, vehicles) stay on your device and are never sent to shops. Only the AI provider handling the request sees what you ask. In default mode that is NearShelf's AI account; with your own key, it is only your chosen provider. The settings panel always shows which mode is on.
    - Before anything is sent, a card shows exactly what will be sent.
 8. **Missed-demand insights for the shopkeeper.**
@@ -238,7 +238,7 @@ This counts under the "Potential Impact" judging criterion.
 |---|---|---|
 | Calling or walking around | Slow, worst at night or during shortages | The agent asks for you, in seconds |
 | Marketplaces and e-pharmacies | Commission, and the shop loses the customer | The shop's own site; no middleman |
-| Directory "get quotes" forms | Your number goes to many vendors | Shops never learn who asked |
+| Directory "get quotes" forms | Your number goes to many vendors | Shops don't learn who asked unless you hold an item |
 | Local-inventory feed services (Google's Local Inventory app, formerly Pointy; NearSt in the UK) | Stock shows only inside big platforms' search, often for a monthly fee, from certain billing systems only, and no outside agent can ask it | Open, shop-owned, any agent can ask, works from any billing export |
 | ONDC (India's open commerce network) | Open, but catalogue onboarding is heavy for mom-and-pop shops; retail volumes reported uneven | Agent-native, starts from the billing export, no seller app needed; could connect to ONDC later |
 

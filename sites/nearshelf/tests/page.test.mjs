@@ -158,6 +158,20 @@ test("the shopper's spot changes the distances", () => {
   App.page.setSpot("metro-gate");
 });
 
+test("the page says plainly what goes to the AI provider and what shops get", async () => {
+  const page = (await readFile(new URL("../index.html", import.meta.url), "utf8")).toLowerCase();
+  assert.ok(page.includes("the details the assistant reads from this page"), "The page must say the assistant sends the page data it reads to the AI provider.");
+  assert.ok(page.includes("stored only in this browser"));
+  for (const overclaim of [
+    "never your name, number or location",
+    "shops never learn who asked",
+    "the shop sees only the item",
+    "they stay in this browser and are never sent to shops",
+  ]) {
+    assert.ok(!page.includes(overclaim), `index.html still promises "${overclaim}".`);
+  }
+});
+
 test("the search form's request names the item and the kind of shop", () => {
   assert.equal(composeRequest({ need: "ORS sachets", category: "pharmacy", openNow: true }), "Medicine: ORS sachets. Ask pharmacies that are open now whether they have it, and compare their answers.");
   assert.equal(composeRequest({ need: " clutch cable  for my scooter ", category: "auto_parts", openNow: false }), "Vehicle part: clutch cable for my scooter. Ask parts dealers whether they have it, and compare their answers.");

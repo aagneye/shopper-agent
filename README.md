@@ -6,7 +6,7 @@ NearShelf is an entry for the [Open Agentic Web Challenge](https://cognizant-age
 
 - **Each shop has its own agent** on its own website, and it answers from the shop's billing system.
 - **A shopper has a personal agent** that runs in their browser. It asks those shop agents whether they have a medicine or a vehicle part, compares the answers, and holds the item for pickup.
-- **No calls and no marketplace.** Shops never learn who asked.
+- **No calls and no marketplace.** Shops don't learn who asked unless you hold an item.
 
 The demo is set in **Neem Chowk**, a fictional neighbourhood. Every shop, brand and stock level in it is made up.
 

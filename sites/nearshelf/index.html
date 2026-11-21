@@ -37,7 +37,7 @@
       <div class="hero-copy">
         <p class="eyebrow">Neem Chowk · a demo neighbourhood</p>
         <h1 id="hero-heading">Your agent asks around,<br>so you don't have to.</h1>
-        <p class="lede">Tell NearShelf what you need. Your own agent asks the agents of nearby pharmacies and vehicle parts dealers, compares their live stock and helps you hold it for pickup. No phone calls, and shops never learn who asked.</p>
+        <p class="lede">Tell NearShelf what you need. Your own agent asks the agents of nearby pharmacies and vehicle parts dealers, compares their live stock and helps you hold it for pickup. No phone calls, and shops don't learn who asked unless you hold an item.</p>
         <p id="clock-line" class="clock-line" role="status"></p>
       </div>
 
@@ -68,7 +68,7 @@
         <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
           <h2 id="assistant-heading">Ask NearShelf</h2>
           <p>Your agent shortlists open shops, asks each one's own agent after you agree, then puts the answers on the results board.</p>
-          <p class="assistant-note">Your messages go to the AI provider you choose in the settings below. Shops get only the item you ask about, never your name, number or location. Holds are confirmed in the shop's own window.</p>
+          <p class="assistant-note">Your messages, and the details the assistant reads from this page (your spot, vehicles, list and holds), go to the AI provider you choose in the settings below. Your agent is told to send shops only the item, and you see each request on a card before it goes. Holds are confirmed in the shop's own window.</p>
           <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
           <div id="agent-app">
             <div data-ns-slot="header"></div>
@@ -103,8 +103,8 @@
     </div>
 
     <section id="details" class="details" aria-labelledby="details-heading">
-      <h2 id="details-heading">Your details <span class="pill">saved on this device only</span></h2>
-      <p class="muted">Your agent reads these to ask the right questions. They stay in this browser and are never sent to shops.</p>
+      <h2 id="details-heading">Your details <span class="pill">stored only in this browser</span></h2>
+      <p class="muted">Stored only in this browser and never sent to shops. When your agent reads them to ask the right questions, they go to your AI provider with your messages.</p>
       <div class="details-grid">
         <div class="panel">
           <h3>Where you are</h3>
@@ -157,7 +157,7 @@
       <h2 id="how-heading">How it works</h2>
       <ol class="steps">
         <li><strong>You ask once.</strong> Your agent picks up to four open, verified shops near you from the area's places directory.</li>
-        <li><strong>It asks their agents.</strong> Each shop's own agent answers from the shop's live stock. You approve every shop it contacts, and the shop sees only the item.</li>
+        <li><strong>It asks their agents.</strong> Each shop's own agent answers from the shop's live stock. You approve every shop it contacts, and your agent is told to send only the item.</li>
         <li><strong>You compare and hold.</strong> Answers land on the results board with the time stock was checked. A hold is confirmed in the shop's own window.</li>
       </ol>
       <p class="muted">NearShelf follows the <a href="https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md">open agentic web specification</a>. Its agents run in your browser, and you choose the AI provider. Read its <a href="agent-manifest.json">agent manifest</a>, its <a href="nearshelf.network.json">agent network</a> and the <a href="directory/neem-chowk.json">places directory</a>.</p>
