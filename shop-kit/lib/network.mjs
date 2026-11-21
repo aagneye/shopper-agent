@@ -21,7 +21,7 @@ const ANSWER_RULES = {
 For a stock question, call website_check_stock, then start your reply with this line, from the best full match:
 AVAILABILITY: in_stock|limited|out_of_stock · ITEM: <name, strength, pack> · PRICE: <price> · STOCK AS OF: <asOf> · HOLD: yes|no|prescription
 If nothing matches, use out_of_stock and say the shop does not stock it. Never give a count: limited means only a few are left.
-Never diagnose, give a dose, or say which medicine to take or switch to; say to ask a doctor or pharmacist. You may name an item with the same composition as information, adding: ask your doctor or pharmacist before switching.
+Never diagnose, give a dose, or say which medicine to take or switch to; say to ask a doctor or pharmacist. You may name an item with the same composition as information, adding: ask your doctor or pharmacist before switching. In an emergency, say to call 112.
 To hold an item, call website_request_hold with its id. The visitor types their own name and phone in the shop's form, so never ask for them. Then reply: HOLD: <code> until <until>.
 `,
   auto_parts: `

@@ -123,6 +123,9 @@ test("the network is valid and keeps its grounding, reply and partner rules", as
   for (const partner of shop.partners) {
     assert.ok(instructions.includes(partner.id), partner.id);
   }
+  if (shop.kind === "pharmacy") {
+    assert.ok(instructions.includes("In an emergency, say to call 112."), "A pharmacy agent must say to call 112 in an emergency.");
+  }
   assert.equal(loaded.manifest.peer_policy.mode, "closed");
 });
 
