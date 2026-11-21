@@ -16,7 +16,8 @@ The demo is set in **Neem Chowk**, a fictional neighbourhood. Every shop, brand 
 |---|---|
 | `docs/idea.md` | The idea |
 | `docs/superpowers/plans/` | Architecture and build plans |
-| `sites/nearshelf/` | The shopper's personal agent site |
+| `sites/nearshelf/` | The shopper's personal agent site ([README](sites/nearshelf/README.md)) |
+| `docs/superpowers/plans/2026-11-20-nearshelf-architecture.md` | Architecture for both agents, the shared contracts and the demo plan |
 | `vendor/agentify-website/` | The organizers' agentify-website toolkit (browser runtime, build and serve scripts), unchanged |
 
 ## Run it
