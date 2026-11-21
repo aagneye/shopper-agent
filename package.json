@@ -13,6 +13,8 @@
     "check:nearshelf": "node vendor/agentify-website/scripts/build_network.mjs sites/nearshelf/nearshelf.hocon --manifest sites/nearshelf/agent-manifest.json --check",
     "test:nearshelf": "node --test \"sites/nearshelf/tests/*.test.mjs\"",
     "serve:nearshelf": "node vendor/agentify-website/scripts/serve_site.mjs sites/nearshelf --port 8080 --open-as 127.0.0.1",
-    "test": "npm run test:nearshelf"
+    "test:shop-kit": "node --test \"shop-kit/tests/*.test.mjs\"",
+    "dev": "node tools/dev.mjs",
+    "test": "node --test \"sites/*/tests/*.test.mjs\" \"shop-kit/tests/*.test.mjs\""
   }
 }
