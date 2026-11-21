@@ -1,0 +1,12 @@
+code,name,composition,strength,pack,schedule,mrp,qty
+SM-1001,Paracetamol Oral Suspension (Paediatric),Paracetamol,120 mg/5 ml,60 ml bottle,OTC,38,2
+SM-1002,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,40
+SM-1003,Paracetamol Tablets,Paracetamol,650 mg,strip of 15,OTC,30,25
+SM-1004,Oral Rehydration Salts (ORS),Sodium chloride + potassium chloride + sodium citrate + glucose,21 g,sachet,OTC,21,3
+SM-1005,Amoxicillin Capsules,Amoxicillin,500 mg,strip of 10,H,95,12
+SM-1006,Cetirizine Tablets,Cetirizine,10 mg,strip of 10,OTC,18,30
+SM-1007,Azithromycin Tablets,Azithromycin,500 mg,strip of 3,H,72,6
+SM-1008,Ibuprofen Oral Suspension (Paediatric),Ibuprofen,100 mg/5 ml,60 ml bottle,OTC,45,0
+SM-1009,Pantoprazole Tablets,Pantoprazole,40 mg,strip of 10,H,110,15
+SM-1010,Cefixime Tablets,Cefixime,200 mg,strip of 10,H1,120,5
+SM-1011,Digital Thermometer,,,1 piece,OTC,199,4

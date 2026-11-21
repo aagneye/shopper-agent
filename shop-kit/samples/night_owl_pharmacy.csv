@@ -1,0 +1,10 @@
+code,name,composition,strength,pack,schedule,mrp,qty
+NO-201,Paracetamol Oral Suspension (Paediatric),Paracetamol,120 mg/5 ml,60 ml bottle,OTC,38,0
+NO-202,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,60
+NO-203,Oral Rehydration Salts (ORS),Sodium chloride + potassium chloride + sodium citrate + glucose,21 g,sachet,OTC,21,20
+NO-204,Amoxicillin Capsules,Amoxicillin,500 mg,strip of 10,H,95,0
+NO-205,Cetirizine Tablets,Cetirizine,10 mg,strip of 10,OTC,18,12
+NO-206,Ibuprofen Oral Suspension (Paediatric),Ibuprofen,100 mg/5 ml,60 ml bottle,OTC,45,5
+NO-207,Cefixime Tablets,Cefixime,200 mg,strip of 10,H1,120,4
+NO-208,Ondansetron Oral Solution,Ondansetron,2 mg/5 ml,30 ml bottle,H,52,3
+NO-209,Digital Thermometer,,,1 piece,OTC,199,7
