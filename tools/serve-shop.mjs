@@ -6,7 +6,9 @@
 //        [--open-as localhost] [--data .data/<id>.json] [--allow-reset]
 //
 // Only the public agent files get Access-Control-Allow-Origin: *. The API answers its own
-// origin only: the shop's page, counter, dashboard, website tools and action bridge.
+// origin only: the shop's page, counter, dashboard, website tools and action bridge. It
+// refuses requests a browser marks as cross-site, writes from another Origin, and writes
+// that are not JSON (a JSON write from another site needs a CORS preflight, which fails).
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -89,6 +91,30 @@ function readJson(request) {
 }
 
 /**
+ * Decide whether an API request must be refused because it does not come from this shop's
+ * own pages.
+ *
+ * :param request: The incoming request.
+ * :return: {status, reason} to refuse it, or null to answer it.
+ */
+function apiRefusal(request) {
+  const site = request.headers["sec-fetch-site"];
+  if (site && site !== "same-origin" && site !== "none") {
+    return { status: 403, reason: "Only this shop's own pages can use its stock service." };
+  }
+  if (request.method === "POST") {
+    const origin = request.headers.origin;
+    if (origin && origin !== `http://${request.headers.host}` && origin !== `https://${request.headers.host}`) {
+      return { status: 403, reason: "Only this shop's own pages can change its stock." };
+    }
+    if (!String(request.headers["content-type"] || "").toLowerCase().startsWith("application/json")) {
+      return { status: 415, reason: "Send JSON." };
+    }
+  }
+  return null;
+}
+
+/**
  * Start serving one shop.
  *
  * :param options: {siteDir, shopId, host, port, openAs, dataFile, allowReset}.
@@ -123,6 +149,11 @@ export async function startShopServer({ siteDir, shopId, host = "127.0.0.1", por
     try {
       const url = new URL(request.url, "http://shop.invalid");
       if (url.pathname.startsWith("/api/")) {
+        const refusal = apiRefusal(request);
+        if (refusal) {
+          send(response, refusal.status, { "Content-Type": "application/json; charset=utf-8" }, JSON.stringify({ ok: false, reason: refusal.reason }));
+          return;
+        }
         const body = request.method === "POST" ? await readJson(request) : null;
         const answer = await api.handle({ method: request.method, path: url.pathname, query: Object.fromEntries(url.searchParams), body });
         send(response, answer.status, { "Content-Type": "application/json; charset=utf-8" }, JSON.stringify(answer.body));

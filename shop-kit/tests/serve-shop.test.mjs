@@ -81,6 +81,45 @@ test("the shop server follows the hosting rules, serves the API and keeps stock 
   assert.equal(saved.items.find((item) => item.id === "SM-1004").qty, 2);
 });
 
+/**
+ * Send a request with exact headers, as another site's page could make a browser send.
+ *
+ * :param port: The server's port.
+ * :param method: "GET" or "POST".
+ * :param path: The request path.
+ * :param headers: The headers to send.
+ * :param body: The body text, or "".
+ * :return: A promise of the status code.
+ */
+function rawRequest(port, method, path, headers, body = "") {
+  return new Promise((resolve, reject) => {
+    const request = http.request({ host: "127.0.0.1", port, method, path, headers }, (response) => {
+      response.resume();
+      resolve(response.statusCode);
+    });
+    request.on("error", reject);
+    request.end(body);
+  });
+}
+
+test("the shop API refuses writes from other sites, cross-site reads and non-JSON writes", async (t) => {
+  const site = await fixtureSite();
+  const dataFile = path.join(await mkdtemp(path.join(os.tmpdir(), "nearshelf-data-")), "shanti_medical.json");
+  const server = await startShopServer({ siteDir: site, shopId: "shanti_medical", port: 0, dataFile });
+  t.after(() => server.close());
+  const sale = JSON.stringify({ itemId: "SM-1004", qty: 1 });
+  const own = `http://127.0.0.1:${server.port}`;
+  assert.equal(await rawRequest(server.port, "POST", "/api/sale", { "Content-Type": "text/plain" }, sale), 415);
+  assert.equal(await rawRequest(server.port, "POST", "/api/sale", { "Content-Type": "application/json", Origin: "https://evil.example" }, sale), 403);
+  assert.equal(await rawRequest(server.port, "POST", "/api/reset", { "Content-Type": "application/json", "Sec-Fetch-Site": "cross-site" }, "{}"), 403);
+  assert.equal(await rawRequest(server.port, "GET", "/api/stock?q=ors", { "Sec-Fetch-Site": "cross-site" }), 403);
+  const answer = await (await fetch(new URL("api/stock?q=ors", server.url))).json();
+  assert.equal(answer.matches[0].availability, "limited");
+  assert.equal(await rawRequest(server.port, "POST", "/api/sale", { "Content-Type": "application/json", Origin: own, "Sec-Fetch-Site": "same-origin" }, sale), 200);
+  const saved = JSON.parse(await readFile(dataFile, "utf8"));
+  assert.equal(saved.items.find((item) => item.id === "SM-1004").qty, 2);
+});
+
 test("stock survives a restart of the shop server", async (t) => {
   const site = await fixtureSite();
   const dataFile = path.join(await mkdtemp(path.join(os.tmpdir(), "nearshelf-data-")), "shanti_medical.json");
