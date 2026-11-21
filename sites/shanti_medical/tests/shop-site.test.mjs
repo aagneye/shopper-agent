@@ -180,6 +180,31 @@ async function withTransport(wrap, body) {
  */
 const isHoldPost = (method, path) => method === "POST" && path === "/api/holds";
 
+/**
+ * All text in a stand-in element and its children.
+ *
+ * :param node: A StubElement or a text child.
+ * :return: The joined text.
+ */
+function textOf(node) {
+  return typeof node === "string" ? node : [node.textContent || "", ...(node.children || []).map(textOf)].join(" ");
+}
+
+/**
+ * Ask for a hold through the action bridge, as NearShelf's assistant does, and wait for
+ * the shop's window to draw its form.
+ *
+ * :param hold: The bridge's request_hold definition.
+ * :param requestId: The bridge's request id.
+ * :return: {pending, main}, where main holds the form.
+ */
+async function bridgeHold(hold, requestId) {
+  const children = document.body.children.length;
+  const pending = hold.execute({ itemId: HOLDABLE.id, qty: 1 }, { requestId, callerOrigin: "http://127.0.0.1:8080" });
+  const main = await until(() => document.body.children.length > children && document.body.children.at(-1));
+  return { pending, main };
+}
+
 test("the network is valid and keeps its grounding, reply and partner rules", async () => {
   const loaded = await load();
   assert.deepEqual(validateNetwork(loaded.network).errors, []);
@@ -344,6 +369,35 @@ test("a hold whose answer was lost, then cancelled, is reported as unknown, not 
     await assert.rejects(pending, /may have been taken/);
     assert.equal(dialog.open, false);
   });
+});
+
+test("a hold NearShelf asks for opens the shop's own form in its window, and returns only the code", async () => {
+  document.head = new StubElement("head");
+  const hold = (await bridgeDefinitions()).get("request_hold");
+  const empty = items.find((item) => item.qty === 0);
+  const children = document.body.children.length;
+  const refused = await hold.execute({ itemId: empty.id, qty: 1 }, { requestId: "bridge-1", callerOrigin: "http://127.0.0.1:8080" });
+  assert.deepEqual(refused, { ok: false, reason: "None left to hold." });
+  assert.equal(document.body.children.length, children, "The window drew the form for a hold the shop refuses.");
+
+  const { pending, main } = await bridgeHold(hold, "bridge-2");
+  assert.match(textOf(main), /The assistant on 127\.0\.0\.1:8080 asked .+ to hold this for you/);
+  assert.equal(document.head.children.at(-1).rel, "stylesheet");
+  findById(main, "hold-name").value = VISITOR.name;
+  findById(main, "hold-phone").value = VISITOR.phone;
+  findById(main, "hold-form").dispatch("submit");
+  const result = await pending;
+  assert.equal(result.ok, true, result.reason);
+  assert.match(result.code, /^H-\d{4}$/);
+  const text = JSON.stringify(result);
+  assert.ok(!text.includes("Asha") && !text.includes("98765"), "The visitor's details reached the calling site.");
+  assert.match(textOf(main), new RegExp(`Held: ${result.code}`));
+
+  const before = (await shopApi.holds()).holds.length;
+  const second = await bridgeHold(hold, "bridge-3");
+  findById(second.main, "hold-cancel").dispatch("click");
+  assert.deepEqual(await second.pending, { ok: false, reason: "The visitor cancelled. Nothing was held." });
+  assert.equal((await shopApi.holds()).holds.length, before);
 });
 
 test("the shop facts name each partner shop with its link", () => {
