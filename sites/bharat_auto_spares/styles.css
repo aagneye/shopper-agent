@@ -75,6 +75,15 @@ button { font: inherit; cursor: pointer; }
 
 .dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .dash-list li { border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.dash-import { margin-bottom: 16px; }
+.import-pick { display: inline-block; position: relative; margin: 6px 0 4px; }
+.import-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.import-button { display: inline-block; padding: 10px 16px; border-radius: 10px; font-weight: 600; }
+.import-pick:focus-within .import-button { outline: 3px solid color-mix(in srgb, var(--shop) 35%, white); outline-offset: 2px; }
+.import-list { max-height: 360px; overflow-y: auto; }
+.import-list .import-new strong { color: var(--ok, #166534); }
+.import-list .import-warning strong, .import-list .import-warning .cell-detail { color: var(--bad); }
+.import-list .import-missing { color: var(--muted); }
 .cell-detail { display: block; font-size: 0.85rem; color: var(--muted); }
 .table-wrap { overflow-x: auto; }
 .counter-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
@@ -82,6 +91,49 @@ button { font: inherit; cursor: pointer; }
 .counter-table th { font-size: 0.85rem; color: var(--muted); }
 .row-empty td { color: var(--muted); }
 .small-button { padding: 5px 12px; font-size: 0.875rem; }
+
+.counter-intro { padding: 8px 0 16px; }
+.counter-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.counter-bill { position: sticky; top: 16px; }
+.counter-list { list-style: none; padding: 0; margin: 12px 0 0; }
+.counter-line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.counter-bill .counter-line { grid-template-columns: minmax(0, 1fr) auto; }
+.counter-name { min-width: 0; }
+.counter-facts { font-size: 0.9rem; color: var(--ink-soft); white-space: nowrap; }
+.counter-controls { display: flex; gap: 8px; align-items: center; }
+.qty-input { width: 3.6em; height: 36px; padding: 0 6px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.qty-input[aria-invalid="true"] { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-tint); }
+.qty-input:disabled { background: var(--paper); color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+.stepper .qty-input { border: 0; border-radius: 0; width: 3em; }
+.stepper .qty-input:focus { box-shadow: none; }
+.stepper:focus-within { border-color: var(--shop); box-shadow: 0 0 0 3px color-mix(in srgb, var(--shop) 18%, white); }
+.stepper:has([aria-invalid="true"]) { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-tint); }
+.step-button { width: 34px; height: 36px; border: 0; background: transparent; color: var(--shop); font-size: 1.25rem; font-weight: 700; line-height: 1; }
+.step-button:hover:not(:disabled) { background: color-mix(in srgb, var(--shop) 10%, white); }
+.step-button:disabled { color: var(--line); cursor: default; }
+.counter-controls .primary.small-button { height: 36px; }
+.counter-amount { min-width: 4.5em; text-align: right; font-weight: 700; white-space: nowrap; }
+.remove-button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--bad); font-size: 1.2rem; line-height: 1; }
+.remove-button:hover { background: var(--bad-tint); border-color: var(--bad); }
+.line-over .cell-detail { color: var(--bad); font-weight: 600; }
+.bill-line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "name name remove" "price qty amount"; gap: 8px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.bill-name { grid-area: name; line-height: 1.3; overflow-wrap: anywhere; }
+.bill-line .remove-button { grid-area: remove; justify-self: end; width: 30px; height: 30px; font-size: 1.05rem; }
+.bill-price { grid-area: price; min-width: 0; }
+.bill-line .stepper { grid-area: qty; }
+.bill-line .counter-amount { grid-area: amount; min-width: 4em; }
+.counter-total { display: flex; justify-content: space-between; margin: 14px 0 4px; font-size: 1.1rem; }
+.counter-total strong { font-size: 1.35rem; }
+.counter-bill .row { margin-top: 8px; }
+.counter-bill .row .primary { flex: 1; }
+@media (max-width: 760px) {
+  .counter-layout { grid-template-columns: 1fr; }
+  .counter-bill { position: static; order: -1; }
+  .counter-line { grid-template-columns: minmax(0, 1fr) auto; }
+  .counter-line .counter-facts { grid-column: 1; grid-row: 2; }
+  .counter-line .counter-controls { grid-column: 2; grid-row: 1 / span 2; }
+}
 .dash-actions { display: flex; gap: 8px; margin-top: 6px; }
 
 /* The hold form: in a dialog on the shop page, or alone in the shop's own window. */
