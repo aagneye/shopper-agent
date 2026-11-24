@@ -111,6 +111,34 @@ test("the counter cannot sell units that are on hold", async () => {
   assert.match(sale.body.reason, /2 on hold/);
 });
 
+test("a counter bill takes several items in one sale and adds up the total", async () => {
+  const { api } = await shop("shanti_medical");
+  const before = (await get(api, "/api/stock/all")).body.items;
+  const tablets = before.find((item) => item.id === "SM-1002");
+  const { body } = await post(api, "/api/bill", { lines: [{ itemId: "SM-1002", qty: 10 }, { itemId: "SM-1004", qty: 2 }, { itemId: "SM-1002", qty: 2 }] });
+  assert.equal(body.ok, true);
+  assert.deepEqual(body.lines.map((line) => [line.itemId, line.qty]), [["SM-1002", 12], ["SM-1004", 2]]);
+  const ors = before.find((item) => item.id === "SM-1004");
+  assert.equal(body.total, `₹${(tablets.mrp * 12 + ors.mrp * 2).toLocaleString("en-IN")}`);
+  assert.equal(body.items.find((item) => item.id === "SM-1002").qty, tablets.qty - 12);
+  assert.equal(body.items.find((item) => item.id === "SM-1004").available, ors.available - 2);
+});
+
+test("a counter bill is refused whole when any line cannot be billed", async () => {
+  const { api } = await shop("shanti_medical");
+  await post(api, "/api/holds", { itemId: "SM-1001", qty: 2, ...ASHA });
+  const tabletsQty = async () => (await get(api, "/api/stock/all")).body.items.find((item) => item.id === "SM-1002").qty;
+  const before = await tabletsQty();
+  const refused = await post(api, "/api/bill", { lines: [{ itemId: "SM-1002", qty: 1 }, { itemId: "SM-1001", qty: 1 }] });
+  assert.equal(refused.body.ok, false);
+  assert.match(refused.body.reason, /2 on hold/);
+  assert.equal(await tabletsQty(), before);
+  for (const lines of [[], [{ itemId: "SM-1002", qty: 0 }], [{ itemId: "SM-1002", qty: 1.5 }], [{ itemId: "nope", qty: 1 }], [{ itemId: "SM-1002", qty: 51 }]]) {
+    assert.equal((await post(api, "/api/bill", { lines })).body.ok, false, JSON.stringify(lines));
+  }
+  assert.equal((await post(api, "/api/bill", {})).body.ok, false);
+});
+
 test("missed demand counts what people asked for that the shop could not give", async () => {
   const { api } = await shop("shanti_medical");
   await get(api, "/api/stock", { q: "unicorn tears" });
@@ -229,6 +257,84 @@ test("reset is off unless allowed, and restores the billing export when on", asy
   await post(open, "/api/sale", { itemId: "SM-1004", qty: 3 });
   assert.equal((await post(open, "/api/reset", {})).status, 200);
   assert.equal((await get(open, "/api/stock", { q: "ors" })).body.matches[0].availability, "limited");
+});
+
+const HEADER = "code,name,composition,strength,pack,schedule,mrp,qty";
+const IMPORT = [
+  HEADER,
+  "SM-1002,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,70",
+  "SM-1004,Oral Rehydration Salts (ORS),Sodium chloride + potassium chloride + sodium citrate + glucose,21 g,sachet,OTC,23,3",
+  "SM-1003,Paracetamol Tablets,Paracetamol,650 mg,strip of 15,OTC,30,25",
+  "SM-9001,Dolo 650,Paracetamol,650 mg,strip of 15,OTC,32,50",
+].join("\n");
+
+test("a stock import previews the changes and saves nothing until applied", async () => {
+  const { api } = await shop("shanti_medical");
+  const before = (await get(api, "/api/stock/all")).body.items;
+  const preview = await post(api, "/api/stock/import", { csv: IMPORT });
+  assert.equal(preview.body.ok, true);
+  assert.equal(preview.body.applied, false);
+  assert.deepEqual(preview.body.changed, [
+    { id: "SM-1002", name: "Paracetamol Tablets", qtyFrom: 40, qtyTo: 70, priceFrom: "₹15", priceTo: "₹15" },
+    { id: "SM-1004", name: "Oral Rehydration Salts (ORS)", qtyFrom: 3, qtyTo: 3, priceFrom: "₹21", priceTo: "₹23" },
+  ]);
+  assert.deepEqual(preview.body.added, [{ id: "SM-9001", name: "Dolo 650", detail: "650 mg · strip of 15", qty: 50, price: "₹32" }]);
+  assert.equal(preview.body.unchanged, 1);
+  assert.equal(preview.body.missing.length, before.length - 3);
+  assert.deepEqual((await get(api, "/api/stock/all")).body.items, before);
+});
+
+test("an applied stock import sets counts and prices, adds new items, and keeps the rest and the holds", async () => {
+  const { api } = await shop("shanti_medical");
+  await post(api, "/api/holds", { itemId: "SM-1002", qty: 2, ...ASHA });
+  const answer = await post(api, "/api/stock/import", { csv: IMPORT, apply: true });
+  assert.equal(answer.body.applied, true);
+  const items = (await get(api, "/api/stock/all")).body.items;
+  const byId = Object.fromEntries(items.map((item) => [item.id, item]));
+  assert.deepEqual([byId["SM-1002"].qty, byId["SM-1002"].held, byId["SM-1002"].available], [70, 2, 68]);
+  assert.equal(byId["SM-1004"].price, "₹23");
+  assert.equal(byId["SM-1001"].qty, 2);
+  assert.equal(byId["SM-9001"].qty, 50);
+  assert.equal((await get(api, "/api/stock", { q: "dolo 650" })).body.matches[0].id, "SM-9001");
+  assert.equal((await get(api, "/api/holds")).body.holds.length, 1);
+  const again = await post(api, "/api/stock/import", { csv: IMPORT, apply: true });
+  assert.deepEqual([again.body.changed.length, again.body.added.length, again.body.unchanged], [0, 0, 4]);
+});
+
+test("a stock import warns when the file has fewer than are on hold", async () => {
+  const { api } = await shop("shanti_medical");
+  await post(api, "/api/holds", { itemId: "SM-1002", qty: 2, ...ASHA });
+  const csv = `${HEADER}\nSM-1002,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,1`;
+  const answer = await post(api, "/api/stock/import", { csv });
+  assert.deepEqual(answer.body.warnings, ["Paracetamol Tablets: the file says 1, but 2 are on hold."]);
+});
+
+test("a bad stock file is refused whole, with the line at fault", async () => {
+  const { api } = await shop("shanti_medical", { allowReset: true });
+  const before = (await get(api, "/api/stock/all")).body.items;
+  const cases = [
+    [undefined, /Choose a stock export/],
+    ["", /Choose a stock export/],
+    ["code,name\nA,B", /header must be/],
+    [HEADER, /no items/],
+    [`${HEADER}\nSM-1002,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,lots`, /Line 2: qty/],
+    [`${IMPORT}\nSM-1002,Paracetamol Tablets,Paracetamol,500 mg,strip of 10,OTC,15,9`, /Line 6: duplicate/],
+  ];
+  for (const [csv, reason] of cases) {
+    const answer = await post(api, "/api/stock/import", { csv, apply: true });
+    assert.equal(answer.body.ok, false, String(csv));
+    assert.match(answer.body.reason, reason);
+  }
+  assert.deepEqual((await get(api, "/api/stock/all")).body.items, before);
+});
+
+test("reset after a stock import goes back to the original billing export", async () => {
+  const { api } = await shop("shanti_medical", { allowReset: true });
+  await post(api, "/api/stock/import", { csv: IMPORT, apply: true });
+  await post(api, "/api/reset", {});
+  const items = (await get(api, "/api/stock/all")).body.items;
+  assert.equal(items.find((item) => item.id === "SM-1002").qty, 40);
+  assert.equal(items.some((item) => item.id === "SM-9001"), false);
 });
 
 test("unknown routes, wrong methods and bad bodies are refused", async () => {

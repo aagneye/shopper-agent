@@ -61,6 +61,11 @@ export class ApiClient {
     return this.transport("POST", "/api/sale", null, { itemId, qty });
   }
 
+  /** Bill several items as one sale: lines is [{itemId, qty}]. */
+  bill(lines) {
+    return this.transport("POST", "/api/bill", null, { lines });
+  }
+
   /** Whether the shop would hold an item now, before anyone's details are asked. */
   checkHold(itemId, qty) {
     return this.transport("GET", "/api/holds/check", { itemId, qty: String(qty) }, null);
@@ -89,6 +94,16 @@ export class ApiClient {
   /** What people asked for that the shop could not give. */
   missed() {
     return this.transport("GET", "/api/missed", null, null);
+  }
+
+  /**
+   * Update the stock from a new billing export.
+   *
+   * :param csv: The export's text.
+   * :param apply: False to only see what would change, true to save it.
+   */
+  importStock(csv, apply) {
+    return this.transport("POST", "/api/stock/import", null, { csv, apply: apply === true });
   }
 
   /** Put the demo stock back to the billing export. */

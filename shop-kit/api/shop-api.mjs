@@ -6,9 +6,12 @@
 // numbers stay in the holds list, masked for the dashboard.
 import { areaNow, parseHHMM } from "../../sites/nearshelf/js/clock.js";
 import { DAYS, openState } from "../../sites/nearshelf/js/directory.js";
-import { band, formatRupees, holdKind, searchStock } from "./stock.mjs";
+import { band, formatRupees, holdKind, parseBillingCsv, searchStock } from "./stock.mjs";
 
 const MOST_PER_SALE = 50;
+const MOST_LINES_PER_BILL = 30;
+const MOST_IMPORT_CHARS = 400 * 1024;
+const MOST_IMPORT_ITEMS = 5000;
 const MOST_PER_HOLD = 5;
 const MOST_LOGGED = 500;
 const MOST_MISSED_SHOWN = 20;
@@ -105,7 +108,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   const heldOf = (state, itemId) => state.holds.filter((hold) => hold.itemId === itemId && isActive(hold)).reduce((sum, hold) => sum + hold.qty, 0);
   const shopkeeperItem = (state, item) => {
     const held = heldOf(state, item.id);
-    return { id: item.id, name: item.name, detail: item.detail, price: formatRupees(item.mrp), qty: item.qty, held, available: item.qty - held };
+    return { id: item.id, name: item.name, detail: item.detail, price: formatRupees(item.mrp), mrp: item.mrp, qty: item.qty, held, available: item.qty - held };
   };
 
   /**
@@ -170,6 +173,66 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     state.sales.splice(0, Math.max(0, state.sales.length - MOST_LOGGED));
     await store.set(state);
     return { status: 200, body: { ok: true, item: shopkeeperItem(state, item) } };
+  }
+
+  /**
+   * POST /api/bill {lines: [{itemId, qty}]}: bill several items as one sale. Every line is
+   * checked before any stock changes, so a bill is taken whole or not at all. Lines for the
+   * same item are added together. Held units cannot be sold.
+   */
+  async function bill({ body }) {
+    const lines = body && Array.isArray(body.lines) ? body.lines : null;
+    if (!lines || lines.length === 0) {
+      return refuse("lines", "Add at least one item to the bill.");
+    }
+    if (lines.length > MOST_LINES_PER_BILL) {
+      return refuse("lines", `Bill up to ${MOST_LINES_PER_BILL} lines at a time.`);
+    }
+    const state = await store.get();
+    const wanted = new Map();
+    for (const line of lines) {
+      const item = state.items.find((entry) => entry.id === (line && line.itemId));
+      if (!item) {
+        return refuse("lines", "One of the items is not sold here.");
+      }
+      if (!Number.isInteger(line.qty) || line.qty < 1) {
+        return refuse("lines", `${item.name}: enter a whole number of 1 or more.`);
+      }
+      wanted.set(item.id, (wanted.get(item.id) || 0) + line.qty);
+    }
+    for (const [itemId, qty] of wanted) {
+      const item = state.items.find((entry) => entry.id === itemId);
+      if (qty > MOST_PER_SALE) {
+        return refuse("lines", `${item.name}: bill 1 to ${MOST_PER_SALE} at a time.`);
+      }
+      const held = heldOf(state, itemId);
+      const available = item.qty - held;
+      if (qty > available) {
+        const left = held > 0 ? `only ${available} can be billed, ${held} on hold` : `only ${item.qty} in stock`;
+        return refuse("lines", `${item.name}: ${left}.`);
+      }
+    }
+    const at = clock().toISOString();
+    let total = 0;
+    const billed = [];
+    for (const [itemId, qty] of wanted) {
+      const item = state.items.find((entry) => entry.id === itemId);
+      item.qty -= qty;
+      total += item.mrp * qty;
+      state.sales.push({ itemId, qty, at });
+      billed.push({ itemId, name: item.name, detail: item.detail, qty, price: formatRupees(item.mrp), amount: formatRupees(item.mrp * qty) });
+    }
+    state.sales.splice(0, Math.max(0, state.sales.length - MOST_LOGGED));
+    await store.set(state);
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        lines: billed,
+        total: formatRupees(total),
+        items: [...wanted.keys()].map((itemId) => shopkeeperItem(state, state.items.find((entry) => entry.id === itemId))),
+      },
+    };
   }
 
   /**
@@ -406,6 +469,78 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
+   * POST /api/stock/import {csv, apply}: a new stock export from the billing software.
+   * The file's counts and prices replace the shop's, matched by item code, because the
+   * billing software's count is the true one: uploading the same file twice changes
+   * nothing. New codes are added. Items missing from the file are kept, and listed.
+   * Holds are kept. Without apply it only says what would change.
+   */
+  async function importStock({ body }) {
+    const csv = body && typeof body.csv === "string" ? body.csv : null;
+    if (!csv || !csv.trim()) {
+      return refuse("csv", "Choose a stock export (.csv) first.");
+    }
+    if (csv.length > MOST_IMPORT_CHARS) {
+      return refuse("csv", "That file is too large. Export up to 5,000 items at a time.");
+    }
+    const parsed = parseBillingCsv(csv, profile.kind);
+    if (!parsed.ok) {
+      return refuse("csv", parsed.reason);
+    }
+    if (parsed.items.length === 0) {
+      return refuse("csv", "The file has a header but no items.");
+    }
+    if (parsed.items.length > MOST_IMPORT_ITEMS) {
+      return refuse("csv", "That file is too large. Export up to 5,000 items at a time.");
+    }
+    const state = await store.get();
+    const byCode = new Map(state.items.map((item) => [item.id.toLowerCase(), item]));
+    const inFile = new Set();
+    const changed = [];
+    const added = [];
+    const warnings = [];
+    let unchanged = 0;
+    const next = state.items.map((item) => ({ ...item }));
+    const nextByCode = new Map(next.map((item) => [item.id.toLowerCase(), item]));
+    for (const fresh of parsed.items) {
+      const code = fresh.id.toLowerCase();
+      inFile.add(code);
+      const old = byCode.get(code);
+      if (!old) {
+        added.push({ id: fresh.id, name: fresh.name, detail: fresh.detail, qty: fresh.qty, price: formatRupees(fresh.mrp) });
+        next.push({ ...fresh });
+        continue;
+      }
+      if (old.qty === fresh.qty && old.mrp === fresh.mrp && old.name === fresh.name && old.detail === fresh.detail) {
+        unchanged += 1;
+      } else {
+        changed.push({
+          id: old.id,
+          name: fresh.name,
+          qtyFrom: old.qty,
+          qtyTo: fresh.qty,
+          priceFrom: formatRupees(old.mrp),
+          priceTo: formatRupees(fresh.mrp),
+        });
+      }
+      const held = heldOf(state, old.id);
+      if (fresh.qty < held) {
+        warnings.push(`${fresh.name}: the file says ${fresh.qty}, but ${held} are on hold.`);
+      }
+      // Keep the shop's own code spelling, so holds and past sales still point at it.
+      Object.assign(nextByCode.get(code), { ...fresh, id: old.id });
+    }
+    const missing = state.items.filter((item) => !inFile.has(item.id.toLowerCase())).map((item) => ({ id: item.id, name: item.name, qty: item.qty }));
+    const answer = { ok: true, applied: false, changed, added, missing, unchanged, warnings };
+    if (body.apply === true) {
+      state.items = next;
+      await store.set(state);
+      answer.applied = true;
+    }
+    return { status: 200, body: answer };
+  }
+
+  /**
    * POST /api/reset: put the shop back to its billing export, for demos.
    */
   async function reset() {
@@ -437,11 +572,13 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     "/api/stock": { GET: stock },
     "/api/stock/all": { GET: stockAll },
     "/api/sale": { POST: sale },
+    "/api/bill": { POST: bill },
     "/api/holds": { GET: listHolds, POST: createHold },
     "/api/holds/check": { GET: checkHold },
     "/api/holds/collect": { POST: collectHold },
     "/api/holds/release": { POST: releaseHold },
     "/api/missed": { GET: listMissed },
+    "/api/stock/import": { POST: importStock },
     "/api/reset": { POST: reset },
   };
 
