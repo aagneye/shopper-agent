@@ -19,22 +19,30 @@
     </nav>
   </header>
   <main>
-    <section class="panel" aria-labelledby="counter-heading">
+    <div class="counter-intro">
       <p class="eyebrow">Shopkeeper · demo billing counter</p>
       <h1 id="counter-heading">Billing counter</h1>
       <p class="muted">This stands in for the shop's billing software. Every bill updates the stock the shop's agent answers from, at once. <span id="counter-asof"></span></p>
-      <label for="counter-filter">Find an item</label>
-      <input id="counter-filter" type="search" autocomplete="off" placeholder="Name or code">
-      <p id="counter-status" class="status" role="status"></p>
-      <div class="table-wrap">
-        <table class="counter-table">
-          <thead>
-            <tr><th scope="col">Item</th><th scope="col">Price</th><th scope="col">On shelf</th><th scope="col">Held</th><th scope="col">Free</th><th scope="col"><span class="visually-hidden">Bill</span></th></tr>
-          </thead>
-          <tbody id="counter-rows"></tbody>
-        </table>
-      </div>
-    </section>
+    </div>
+    <div class="counter-layout">
+      <section class="panel" aria-labelledby="counter-items-heading">
+        <h2 id="counter-items-heading">Items</h2>
+        <label for="counter-filter">Find an item</label>
+        <input id="counter-filter" type="search" autocomplete="off" placeholder="Name or code">
+        <ul id="counter-rows" class="counter-list" aria-label="Items on the shelf"></ul>
+      </section>
+      <section class="panel counter-bill" aria-labelledby="counter-bill-heading">
+        <h2 id="counter-bill-heading">Current bill</h2>
+        <p id="counter-empty" class="muted">No items yet. Type a quantity next to an item and press Add.</p>
+        <ul id="counter-cart" class="counter-list" aria-label="Items on this bill"></ul>
+        <p class="counter-total">Total <strong id="counter-total">₹0</strong></p>
+        <p id="counter-status" class="status" role="status"></p>
+        <div class="row">
+          <button id="counter-bill" class="primary" type="button" disabled>Bill</button>
+          <button id="counter-clear" class="secondary" type="button" disabled>Clear</button>
+        </div>
+      </section>
+    </div>
   </main>
   <footer class="footer"><p><strong>Demo.</strong> No login, because the shop is fictional. A real counter would be behind the shop's own sign-in.</p></footer>
 </body>
