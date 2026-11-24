@@ -40,6 +40,23 @@
         <ul id="dash-low" class="dash-list"></ul>
       </section>
     </div>
+    <section class="panel dash-import" aria-labelledby="import-heading">
+      <h2 id="import-heading">Update stock from your billing software</h2>
+      <p class="small muted">Export the stock report as CSV and choose it here. Counts and prices in the file replace the ones here, matched by item code. New codes are added. Holds stay. You see every change before it is saved.</p>
+      <label class="import-pick">
+        <span class="secondary import-button">Choose stock file (.csv)</span>
+        <input id="import-file" type="file" accept=".csv,text/csv">
+      </label>
+      <p id="import-status" class="status" role="status"></p>
+      <div id="import-preview" hidden>
+        <p id="import-summary"></p>
+        <ul id="import-changes" class="dash-list import-list"></ul>
+        <p class="row">
+          <button id="import-apply" class="primary" type="button">Save these changes</button>
+          <button id="import-cancel" class="secondary" type="button">Cancel</button>
+        </p>
+      </div>
+    </section>
     <p><button id="dash-reset" class="secondary" type="button">Reset demo stock</button></p>
   </main>
   <footer class="footer"><p><strong>Demo.</strong> Names show as a first name and phones as their last two digits. A real dashboard would be behind the shop's own sign-in.</p></footer>
