@@ -15,8 +15,8 @@ node tools/serve-shop.mjs sites/shanti_medical --shop shanti_medical --allow-res
 | Page | What it is |
 |---|---|
 | `index.html` | The shop's page: facts, a live stock search, holds, and "Ask Shanti Medical" |
-| `counter.html` | The demo billing counter. Each bill changes the stock the agent answers from |
-| `dashboard.html` | Holds to set aside, marked Collected (billed) or Released (back on the shelf), missed demand (what people asked for that the shop didn't have), and low stock |
+| `counter.html` | The demo billing counter: add items with a typed quantity, change or remove lines, then bill them all at once. Each bill changes the stock the agent answers from |
+| `dashboard.html` | Holds to set aside, marked Collected (billed) or Released (back on the shelf), missed demand (what people asked for that the shop didn't have), low stock, and **Update stock** from a new billing export (shown before it is saved) |
 
 ## The agent
 

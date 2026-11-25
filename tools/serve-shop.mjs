@@ -20,7 +20,8 @@ import { FileStore } from "./file-store.mjs";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const WORKER_CSP = "default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'";
-const MOST_BODY_BYTES = 64 * 1024;
+// Large enough for a stock export of a few thousand items.
+const MOST_BODY_BYTES = 512 * 1024;
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
