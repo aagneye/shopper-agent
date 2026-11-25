@@ -33,18 +33,19 @@ export class HoldWindow {
    * Check the request with the shop's live rules, then show the form in this window. A
    * refusal comes back before the form opens, so nobody types details for nothing.
    *
-   * :param args: The validated request {itemId, qty}.
+   * :param args: The validated request {itemId, qty, more}.
    * :param context: The bridge's call details, with the calling site's origin.
    * :return: A promise of the refusal, the hold, or the visitor's cancel.
    */
   static async start(args, context) {
     const item = catalog.find((entry) => entry.id === args.itemId);
-    if (!item) {
+    const more = (args.more ?? []).map((line) => ({ ...line, item: catalog.find((entry) => entry.id === line.itemId) }));
+    if (!item || more.some((line) => !line.item)) {
       return { ok: false, reason: "That item is not sold here." };
     }
     let check;
     try {
-      check = await shopApi.checkHold(item.id, args.qty);
+      check = await shopApi.checkHold(item.id, args.qty, more);
     } catch {
       return { ok: false, reason: "The shop's stock service did not answer, so nothing was held." };
     }
@@ -68,7 +69,9 @@ export class HoldWindow {
       api: shopApi,
       item,
       qty: args.qty,
+      more,
       until: check.until,
+      pickups: check.pickups,
       intro: `The assistant on ${HoldWindow.hostOf(context?.callerOrigin)} asked ${shop.name} to hold this for you. Type your details here, not in the chat: its chat gets only the hold code.`,
     });
     return form.result;

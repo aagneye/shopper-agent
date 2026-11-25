@@ -41,6 +41,27 @@ export function formatMinutes(minutes) {
 }
 
 /**
+ * Whether a clock time such as "11:00 pm" has passed. It is the first such time after it
+ * was given, within a day.
+ *
+ * :param label: The time, as formatMinutes writes it.
+ * :param givenIso: The moment it was given.
+ * :param now: The real moment now.
+ * :param timeZone: The area's time zone.
+ * :return: True when it has passed, false when not or when the times cannot be read.
+ */
+export function timePassed(label, givenIso, now, timeZone) {
+  const match = /^(\d{1,2}):(\d{2}) (am|pm)$/.exec(String(label ?? ""));
+  const given = new Date(givenIso);
+  if (!match || Number.isNaN(given.getTime())) {
+    return false;
+  }
+  const at = (Number(match[1]) % 12) * 60 + Number(match[2]) + (match[3] === "pm" ? 720 : 0);
+  const wait = (at - areaNow(given, timeZone).minutes + 1440) % 1440;
+  return now.getTime() >= given.getTime() + wait * 60000;
+}
+
+/**
  * Read the date and time of day in an area's time zone.
  *
  * :param date: The real moment.

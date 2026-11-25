@@ -15,6 +15,12 @@ export class App {
   /** The page object, created when this module loads. */
   static page = null;
 
+  /** The medicine list, on pharmacy pages only. */
+  static list = null;
+
+  /** Settles when the medicine list, if any, is ready. */
+  static ready = Promise.resolve();
+
   /**
    * Create the page object and draw the page.
    *
@@ -23,10 +29,23 @@ export class App {
   static start() {
     App.page = new ShopPage({ document: globalThis.document, shop, catalog, api: shopApi, clock: () => App.clock() });
     App.page.mount();
+    if (shop.kind === "pharmacy") {
+      App.ready = App.startList().catch((error) => console.error("The medicine list could not load", error));
+    }
     if (typeof window !== "undefined") {
       setInterval(() => App.page.tick(), 30000);
     }
     return App.page;
+  }
+
+  /**
+   * Load and draw a pharmacy's medicine list.
+   */
+  static async startList() {
+    const { MedicineList } = await import("./medicine-list.js");
+    App.list = new MedicineList({ document: globalThis.document, api: shopApi });
+    App.list.mount();
+    App.page.onAdd = (match) => App.list.addItem(match);
   }
 }
 

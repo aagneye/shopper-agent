@@ -1,6 +1,6 @@
 // The shop's hold form. It runs in a dialog on the shop's own page, or in the shop's own
 // window when another site's assistant asks (bridge/hold-window.js). The visitor types
-// their name and phone here; whoever asked gets back only the code and what is held.
+// their name, phone and pickup time here; whoever asked gets back only the code and what is held.
 import { el } from "./render.js";
 
 /**
@@ -10,15 +10,18 @@ export class HoldForm {
   /**
    * Build the form in a container and start waiting for the visitor.
    *
-   * :param options: {doc, container, api, item (a catalog entry), qty, intro (text or
-   *   null), until (when the hold would end, from the shop's check, or null)}.
+   * :param options: {doc, container, api, item (a catalog entry), qty, more
+   *   (further [{itemId, qty, item}] for the same hold), intro (text or
+   *   null), until (when the hold would end, from the shop's check, or null), pickups (the
+   *   pickup times to offer, [{value, label}], from the shop's check)}.
    */
-  constructor({ doc, container, api, item, qty, intro, until = null }) {
+  constructor({ doc, container, api, item, qty, more = [], intro, until = null, pickups = [] }) {
     this.doc = doc;
     this.container = container;
     this.api = api;
     this.item = item;
     this.qty = qty;
+    this.more = more;
     this.done = false;
     // True while the shop has the request and has not answered yet.
     this.pending = false;
@@ -30,7 +33,7 @@ export class HoldForm {
       this.resolve = resolve;
       this.reject = reject;
     });
-    this.build(intro, until);
+    this.build(intro, until, pickups);
   }
 
   /**
@@ -50,20 +53,25 @@ export class HoldForm {
    *
    * :param intro: A line about who asked, or null on the shop's own page.
    * :param until: When the hold would end, or null.
+   * :param pickups: The pickup times to offer.
    */
-  build(intro, until) {
+  build(intro, until, pickups) {
     const doc = this.doc;
     const form = el(doc, "form", "hold-form");
     form.id = "hold-form";
     form.noValidate = true;
     const parts = [
-      el(doc, "h2", "", `Hold ${this.qty} × ${this.item.name}`),
-      el(doc, "p", "hold-summary", [this.item.detail, this.item.price].filter(Boolean).join(" · ")),
+      el(doc, "h2", "", this.more.length ? `Hold ${this.more.length + 1} items` : `Hold ${this.qty} × ${this.item.name}`),
     ];
+    const lines = [{ qty: this.qty, item: this.item }, ...this.more];
+    for (const { qty, item } of lines) {
+      const name = this.more.length ? `${qty} × ${item.name}` : "";
+      parts.push(el(doc, "p", "hold-summary", [name, item.detail, item.price].filter(Boolean).join(" · ")));
+    }
     if (until) {
       parts.push(el(doc, "p", "hold-until", `Held until ${until}. Pay and pick it up at the counter.`));
     }
-    if (this.item.schedule === "H" || this.item.schedule === "H1") {
+    if (lines.some(({ item }) => item.schedule === "H" || item.schedule === "H1")) {
       parts.push(el(doc, "p", "hold-note", "Prescription medicine: bring the prescription. The pharmacist checks it at the counter."));
     }
     if (intro) {
@@ -71,6 +79,7 @@ export class HoldForm {
     }
     this.name = this.field(parts, "hold-name", "Name to give at the counter", { maxLength: 60, autocomplete: "name" });
     this.phone = this.field(parts, "hold-phone", "Mobile number", { maxLength: 16, autocomplete: "tel", type: "tel" });
+    this.pickupFields(parts, pickups, until);
     this.error = el(doc, "p", "hold-error", "");
     this.error.id = "hold-error";
     this.error.setAttribute("role", "alert");
@@ -114,6 +123,39 @@ export class HoldForm {
   }
 
   /**
+   * Add the pickup question: the shop's times to choose from, or the visitor's own time.
+   *
+   * :param parts: The list of form children to append to.
+   * :param pickups: [{value, label}].
+   * :param until: When the hold would end, or null.
+   */
+  pickupFields(parts, pickups, until) {
+    const label = el(this.doc, "label", "", "When will you pick it up?");
+    label.setAttribute("for", "hold-pickup");
+    this.pickup = el(this.doc, "select", "");
+    this.pickup.id = "hold-pickup";
+    this.pickup.required = true;
+    for (const { value, label: text } of [{ value: "", label: "Choose a time" }, ...pickups, { value: "own", label: "My own time" }]) {
+      const option = el(this.doc, "option", "", text);
+      option.value = value;
+      this.pickup.append(option);
+    }
+    this.pickup.value = "";
+    const own = el(this.doc, "div", "hold-own");
+    own.hidden = true;
+    const inside = [];
+    this.ownTime = this.field(inside, "hold-own-time", until ? `Your time, not later than ${until}` : "Your time", { maxLength: 5, autocomplete: "off", type: "time" });
+    own.append(...inside);
+    this.pickup.addEventListener("change", () => {
+      own.hidden = this.pickup.value !== "own";
+      if (!own.hidden) {
+        this.ownTime.focus();
+      }
+    });
+    parts.push(label, this.pickup, own);
+  }
+
+  /**
    * Send the hold to the shop. Both buttons wait until it answers. Mistakes in the details
    * stay on the form to fix; a refusal about the item itself ends the request.
    *
@@ -123,12 +165,18 @@ export class HoldForm {
     if (this.done || this.pending) {
       return;
     }
+    const pickup = this.pickup.value === "own" ? this.ownTime.value : this.pickup.value;
+    if (!pickup) {
+      this.error.textContent = this.pickup.value === "own" ? "Enter your pickup time." : "Choose when you will pick it up.";
+      return;
+    }
+    this.error.textContent = "";
     this.pending = true;
     this.confirm.disabled = true;
     this.cancelButton.disabled = true;
     let answer;
     try {
-      answer = await this.api.createHold({ requestId: this.requestId, itemId: this.item.id, qty: this.qty, name: this.name.value, phone: this.phone.value });
+      answer = await this.api.createHold({ requestId: this.requestId, itemId: this.item.id, qty: this.qty, ...(this.more.length ? { more: this.more.map(({ itemId, qty }) => ({ itemId, qty })) } : {}), name: this.name.value, phone: this.phone.value, pickup });
     } catch {
       // The shop may have taken the hold before its answer was lost. Sending again is safe:
       // the same request id gets the same hold back, not a second one.
@@ -152,6 +200,7 @@ export class HoldForm {
         ok: true,
         code: answer.code,
         until: answer.until,
+        pickup: answer.pickup,
         summary: answer.summary,
         prescription: answer.prescription,
         ...(answer.note ? { note: answer.note } : {}),

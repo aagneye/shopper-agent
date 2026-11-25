@@ -11,6 +11,8 @@ export const STOCK_TOOL = {
     required: ["query"],
     properties: {
       query: { type: "string", minLength: 1, maxLength: 80, description: "Only the item, such as \"paracetamol syrup 120 mg\", or part numbers." },
+      amount: { type: "integer", minimum: 1, maximum: 500, description: "How many are needed, when the visitor says. Each match then has supply.text: how much of it this shop can give, and the cost." },
+      unit: { type: "string", enum: ["tablets", "packs"], description: "tablets counts tablets or capsules; packs counts strips, bottles, sachets or pieces. Default tablets." },
     },
   },
 };
@@ -23,7 +25,7 @@ export const INFO_TOOL = {
 
 export const HOLD_TOOL = {
   name: "request_hold",
-  description: "Hold an item for pickup at this shop. Call it only when the visitor asks for a hold, with an id from website_check_stock. A form opens on the shop's own page or window where the visitor types their own name and phone, so never ask for them. It returns when they confirm or cancel: the hold code and until when, or ok false with the reason.",
+  description: "Hold an item for pickup at this shop. Call it only when the visitor asks for a hold, with an id from website_check_stock. A form opens on the shop's own page or window where the visitor types their own name and phone and chooses a pickup time, so never ask for these. It returns when they confirm or cancel: the hold code and until when, or ok false with the reason.",
   inputSchema: {
     type: "object",
     additionalProperties: false,
@@ -31,6 +33,20 @@ export const HOLD_TOOL = {
     properties: {
       itemId: { type: "string", enum: catalog.map((item) => item.id), description: "The item's id from website_check_stock." },
       qty: { type: "integer", minimum: 1, maximum: 5, description: "How many to hold." },
+      more: {
+        type: "array",
+        maxItems: 7,
+        description: "Further items for the same hold, so the visitor gets one form and one code.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["itemId", "qty"],
+          properties: {
+            itemId: { type: "string", enum: catalog.map((item) => item.id), description: "The item's id." },
+            qty: { type: "integer", minimum: 1, maximum: 5, description: "How many." },
+          },
+        },
+      },
     },
   },
 };

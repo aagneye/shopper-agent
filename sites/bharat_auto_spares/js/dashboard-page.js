@@ -73,8 +73,8 @@ export class DashboardPage {
     this.list("dash-holds", holds.holds, (hold) => {
       const parts = [
         el(this.doc, "strong", "", hold.code),
-        el(this.doc, "span", "", ` ${hold.qty} × ${hold.item}`),
-        el(this.doc, "span", "cell-detail", `${hold.name} · ${hold.phone} · until ${hold.until} · ${hold.status}`),
+        el(this.doc, "span", "", ` ${hold.what}`),
+        el(this.doc, "span", "cell-detail", `${hold.name} · ${hold.phone} · pickup by ${hold.pickup} · until ${hold.until} · ${hold.status}`),
       ];
       if (hold.status === "held") {
         const actions = el(this.doc, "span", "dash-actions");

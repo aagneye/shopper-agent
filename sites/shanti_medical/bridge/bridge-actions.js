@@ -17,7 +17,7 @@ import { HoldWindow } from "./hold-window.js";
  * :param actions: The runtime registry facade with a register(definition) method.
  */
 export function registerActions(actions) {
-  actions.register({ ...STOCK_TOOL, effect: "read", availability: "bridge", callerOrigins: ["*"], execute: (args) => shopApi.stock(args.query) });
+  actions.register({ ...STOCK_TOOL, effect: "read", availability: "bridge", callerOrigins: ["*"], execute: (args) => shopApi.stock(args.query, args.amount, args.unit) });
   actions.register({ ...INFO_TOOL, effect: "read", availability: "bridge", callerOrigins: ["*"], execute: () => shopInfo(shop, new Date()) });
   actions.register(HoldWindow.definition());
 }

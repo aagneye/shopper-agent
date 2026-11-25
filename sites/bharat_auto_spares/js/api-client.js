@@ -47,8 +47,13 @@ export class ApiClient {
   }
 
   /** Stock bands for the items a shopper's words mean. */
-  stock(query) {
-    return this.transport("GET", "/api/stock", { q: query }, null);
+  stock(query, amount, unit) {
+    return this.transport("GET", "/api/stock", { q: query, ...(amount ? { amount: String(amount), unit: unit || "tablets" } : {}) }, null);
+  }
+
+  /** An estimate for a list of {itemId, qty}, from live stock. */
+  quote(lines) {
+    return this.transport("POST", "/api/quote", null, { lines });
   }
 
   /** The shopkeeper's full stock list, with counts. */
@@ -67,8 +72,9 @@ export class ApiClient {
   }
 
   /** Whether the shop would hold an item now, before anyone's details are asked. */
-  checkHold(itemId, qty) {
-    return this.transport("GET", "/api/holds/check", { itemId, qty: String(qty) }, null);
+  checkHold(itemId, qty, more = []) {
+    const extra = more.length ? { more: more.map((line) => `${line.itemId}:${line.qty}`).join(",") } : {};
+    return this.transport("GET", "/api/holds/check", { itemId, qty: String(qty), ...extra }, null);
   }
 
   /** Hold items for pickup, with the shopper's own details. */
