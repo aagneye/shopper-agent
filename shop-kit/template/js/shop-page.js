@@ -20,6 +20,8 @@ export class ShopPage {
     this.catalog = catalog;
     this.api = api;
     this.clock = clock;
+    // Set on pharmacy pages: adds a stock match to the visitor's medicine list.
+    this.onAdd = null;
     this.el = {};
   }
 
@@ -52,25 +54,26 @@ export class ShopPage {
    * :param args: {query}.
    * :return: A promise of the stock answer, or {ok: false, reason}.
    */
-  checkStock({ query }) {
-    return this.api.stock(query);
+  checkStock({ query, amount, unit }) {
+    return this.api.stock(query, amount, unit);
   }
 
   /**
    * Hold an item. The shop first checks it would hold it, so a refusal comes before anyone
    * types their details; then its form opens in a dialog for the visitor's details.
    *
-   * :param args: {itemId, qty}.
+   * :param args: {itemId, qty, more}.
    * :return: A promise of {ok: true, code, until, ...} or {ok: false, reason}.
    */
-  async requestHold({ itemId, qty }) {
+  async requestHold({ itemId, qty, more: extra = [] }) {
     const item = this.catalog.find((entry) => entry.id === itemId);
-    if (!item) {
+    const more = extra.map((line) => ({ ...line, item: this.catalog.find((entry) => entry.id === line.itemId) }));
+    if (!item || more.some((line) => !line.item)) {
       return this.holdOutcome({ ok: false, reason: "That item is not sold here." });
     }
     let check;
     try {
-      check = await this.api.checkHold(item.id, qty);
+      check = await this.api.checkHold(item.id, qty, more);
     } catch {
       return this.holdOutcome({ ok: false, reason: "The shop's stock service did not answer, so nothing was held. Try again in a moment." });
     }
@@ -81,7 +84,7 @@ export class ShopPage {
     dialog.className = "hold-dialog";
     dialog.setAttribute("aria-label", `Hold ${item.name}`);
     this.doc.body.append(dialog);
-    const form = new HoldForm({ doc: this.doc, container: dialog, api: this.api, item, qty, intro: null, until: check.until });
+    const form = new HoldForm({ doc: this.doc, container: dialog, api: this.api, item, qty, more, intro: null, until: check.until, pickups: check.pickups });
     // Escape closes a dialog without its buttons: treat it as Cancel. While the hold is
     // being sent, the dialog stays open for the shop's answer.
     dialog.addEventListener("cancel", (event) => {
@@ -163,6 +166,13 @@ export class ShopPage {
         // An unknown outcome is already shown under the search, so there is nothing more to do.
         hold.addEventListener("click", () => this.requestHold({ itemId: match.id, qty: 1 }).catch(() => {}));
         card.append(hold);
+      }
+      if (this.onAdd) {
+        const add = el(this.doc, "button", "secondary", "Add to list");
+        add.setAttribute("type", "button");
+        add.setAttribute("aria-label", `Add ${match.name}, ${match.detail}, to your list`);
+        add.addEventListener("click", () => this.onAdd(match));
+        card.append(" ", add);
       }
       return card;
     });

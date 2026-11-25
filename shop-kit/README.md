@@ -67,6 +67,7 @@ node tools/serve-shop.mjs sites/shanti_medical --shop shanti_medical --allow-res
 | `api/memory-store.mjs` | An in-memory store. The local server uses `tools/file-store.mjs` |
 | `lib/network.mjs` | Builds the shop's agent network and manifest. The grounding, partner and presentation rules are copied word for word from the agentify-website template |
 | `template/` | The shop site |
+| `pharmacy/` and `lib/medicine-list.html` | The medicine list on pharmacy pages: scan a prescription or pick items, and see an estimate. The scan itself is copied from `sites/nearshelf/js/` |
 | `generate.mjs` | Profile + export → site, then builds the network |
 | `tests/` | Tests for the search, the API and the server |
 
@@ -104,10 +105,11 @@ The rules:
 |---|---|
 | `GET /api/stock?q=` | Bands for a search (in stock, few left, out); logs a miss |
 | `GET /api/stock/all` | Every item with exact counts, for the counter and dashboard |
+| `POST /api/quote` | An estimate for a shopper's list, from live stock. No counts, changes nothing |
 | `POST /api/bill` | Bill several lines at once, all or nothing |
 | `POST /api/sale` | Bill one item |
 | `POST /api/stock/import` | A new billing export, `{csv, apply}`: without `apply` it only says what would change |
-| `GET /api/holds` · `POST /api/holds` | List holds · place a hold |
+| `GET /api/holds` · `POST /api/holds` | List holds · place a hold of one or more items under one code (`more`: further items; `pickup`: 30, 60, 90 or 120 minutes, `any`, or a time such as `18:30`) |
 | `GET /api/holds/check` | Whether a hold could be placed, before anyone types details |
 | `POST /api/holds/collect` · `POST /api/holds/release` | Hold picked up (stock drops) · hold given back |
 | `GET /api/missed` | What shoppers asked for that the shop didn't have |

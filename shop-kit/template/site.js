@@ -35,6 +35,9 @@ export class AssistantMount {
       booted.engine.onActionConfirm = AssistantMount.review;
       AssistantMount.defaultConsent = booted.engine.onConsent;
       booted.engine.onConsent = AssistantMount.consent;
+      const { App } = await import("./js/app.js");
+      await App.ready;
+      App.list?.connect(() => AssistantMount.engine);
       const needsKey = !booted.engine.mockLLM && (!booted.engine.byokKey || booted.engine.byokKey === "demo");
       status.textContent = needsKey
         ? "The assistant needs an AI provider. Add one in AI model settings below."

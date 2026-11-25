@@ -19,6 +19,9 @@ import { buildShopManifest, buildShopNetwork } from "./lib/network.mjs";
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const DIRECTORY = JSON.parse(readFileSync(path.join(REPO, "sites/nearshelf/directory/neem-chowk.json"), "utf8"));
 const TEMPLATE = path.join(REPO, "shop-kit/template");
+// Extra files and page section for pharmacies: the medicine list.
+const PHARMACY = path.join(REPO, "shop-kit/pharmacy");
+const MEDICINE_LIST = readFileSync(path.join(REPO, "shop-kit/lib/medicine-list.html"), "utf8").replace(/\r\n/g, "\n");
 const TOOLKIT = path.join(REPO, "vendor/agentify-website");
 // NearShelf, the shopper's agent, may ask every shop to hold an item.
 const NEARSHELF_ORIGIN = "http://127.0.0.1:8080";
@@ -146,14 +149,20 @@ export function generateShop(id) {
   const shop = shopProfile(place, profile);
   const out = path.join(REPO, "sites", id);
   rmSync(out, { recursive: true, force: true });
-  copyTemplate(TEMPLATE, out, {
+  const values = {
     NAME: shop.name,
     KIND_LABEL: shop.kindLabel,
     TAGLINE: shop.tagline,
     THEME: shop.theme,
     NETWORK: shop.id,
     ADDRESS: shop.address,
-  });
+    MEDICINE_LINK: shop.kind === "pharmacy" ? '      <a href="#medicines">Scan prescription</a>\n' : "",
+    MEDICINE_LIST: shop.kind === "pharmacy" ? MEDICINE_LIST : "",
+  };
+  copyTemplate(TEMPLATE, out, values);
+  if (shop.kind === "pharmacy") {
+    copyTemplate(PHARMACY, out, values);
+  }
   const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
   writeFileSync(path.join(out, "shop.json"), json(shop));
   writeFileSync(path.join(out, "catalog.json"), json(publicCatalog(parsed.items)));
@@ -162,7 +171,7 @@ export function generateShop(id) {
   writeFileSync(path.join(out, "links.json"), json({ version: 1, networks: { [id]: {} } }));
   writeFileSync(path.join(out, "_headers"), headersFile(id));
   cpSync(path.join(TOOLKIT, "runtime"), path.join(out, "runtime"), { recursive: true });
-  for (const file of ["clock.js", "directory.js"]) {
+  for (const file of ["clock.js", "directory.js", ...(shop.kind === "pharmacy" ? ["prescription.js", "prescription-panel.js"] : [])]) {
     cpSync(path.join(REPO, "sites/nearshelf/js", file), path.join(out, "js", file));
   }
   for (const file of STAND_INS) {

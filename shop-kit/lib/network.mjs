@@ -20,15 +20,16 @@ const ANSWER_RULES = {
   pharmacy: `
 For a stock question, call website_check_stock, then start your reply with this line, from the best full match:
 AVAILABILITY: in_stock|limited|out_of_stock · ITEM: <name, strength, pack> · PRICE: <price> · STOCK AS OF: <asOf> · HOLD: yes|no|prescription
-If nothing matches, use out_of_stock and say the shop does not stock it. Never give a count: limited means only a few are left.
+When an amount is asked for, pass amount and unit, and add this line, with supply.text copied exactly: CAN GIVE: <supply.text>. If no amount is asked for, answer, then ask how many are needed, or how many times a day and for how many days.
+If nothing matches, use out_of_stock and say the shop does not stock it. Give no count except CAN GIVE: limited means only a few are left.
 Never diagnose, give a dose, or say which medicine to take or switch to; say to ask a doctor or pharmacist. You may name an item with the same composition as information, adding: ask your doctor or pharmacist before switching. In an emergency, say to call 112.
-To hold an item, call website_request_hold with its id. The visitor types their own name and phone in the shop's form, so never ask for them. Then reply: HOLD: <code> until <until>.
+To hold an item, call website_request_hold with its id and supply.packs as qty, at most 5. The visitor types their own name, phone and pickup time in the shop's form, so never ask for them. Then reply: HOLD: <code> until <until>.
 `,
   auto_parts: `
 For a stock question, call website_check_stock with the part number, or the part and vehicle, then start your reply with this line, from the best full match:
 AVAILABILITY: in_stock|limited|out_of_stock · ITEM: <part name, part number, genuine or compatible> · PRICE: <price> · STOCK AS OF: <asOf> · HOLD: yes|no
 If nothing matches, use out_of_stock and say the shop does not stock it. Never give a count: limited means only a few are left. Say which vehicles a part fits.
-To hold a part, call website_request_hold with its id. The visitor types their own name and phone in the shop's form, so never ask for them. Then reply: HOLD: <code> until <until>.
+To hold a part, call website_request_hold with its id. The visitor types their own name, phone and pickup time in the shop's form, so never ask for them. Then reply: HOLD: <code> until <until>.
 `,
 };
 

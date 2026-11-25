@@ -155,6 +155,7 @@ async function sendHold() {
   const dialog = await holdDialog(children);
   findById(dialog, "hold-name").value = VISITOR.name;
   findById(dialog, "hold-phone").value = VISITOR.phone;
+  findById(dialog, "hold-pickup").value = "any";
   findById(dialog, "hold-form").dispatch("submit");
   return { pending, dialog };
 }
@@ -280,6 +281,7 @@ test("a hold opens the shop's form, and the visitor's details stay out of the re
   const dialog = await holdDialog(before);
   findById(dialog, "hold-name").value = VISITOR.name;
   findById(dialog, "hold-phone").value = VISITOR.phone;
+  findById(dialog, "hold-pickup").value = "any";
   findById(dialog, "hold-form").dispatch("submit");
   const result = await pending;
   assert.equal(result.ok, true, result.reason);
@@ -385,6 +387,7 @@ test("a hold NearShelf asks for opens the shop's own form in its window, and ret
   assert.equal(document.head.children.at(-1).rel, "stylesheet");
   findById(main, "hold-name").value = VISITOR.name;
   findById(main, "hold-phone").value = VISITOR.phone;
+  findById(main, "hold-pickup").value = "any";
   findById(main, "hold-form").dispatch("submit");
   const result = await pending;
   assert.equal(result.ok, true, result.reason);

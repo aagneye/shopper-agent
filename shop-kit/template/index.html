@@ -16,7 +16,7 @@
   <header class="topbar">
     <a class="brand" href="./">{{NAME}}</a>
     <nav class="topnav" aria-label="Shop pages">
-      <a href="#stock">Stock</a>
+{{MEDICINE_LINK}}      <a href="#stock">Stock</a>
       <a href="#assistant">Ask the shop</a>
       <a href="counter.html">Counter</a>
       <a href="dashboard.html">Dashboard</a>
@@ -33,7 +33,7 @@
       <p class="trust">This shop runs its own agent, which answers from the shop's live billing stock. Other sites, such as a shopper's NearShelf agent, can ask it too.</p>
     </section>
 
-    <div class="layout">
+{{MEDICINE_LIST}}    <div class="layout">
       <section id="stock" class="panel" aria-labelledby="stock-heading">
         <h2 id="stock-heading">Check our stock</h2>
         <form id="stock-form" class="stock-form" novalidate>

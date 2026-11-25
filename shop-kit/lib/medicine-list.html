@@ -1,0 +1,34 @@
+    <section id="medicines" class="panel medicines" aria-labelledby="medicines-heading">
+      <h2 id="medicines-heading">Price your medicine list</h2>
+      <p class="small muted">Scan a prescription, or press <strong>Add to list</strong> in the stock search below. You choose every item and the number of packs.</p>
+      <button id="scan-open" class="primary" type="button" aria-expanded="false" aria-controls="scan-panel">Scan prescription</button>
+      <div id="scan-panel" hidden>
+        <p id="scan-note" class="small muted"></p>
+        <button id="scan-settings" class="secondary" type="button" hidden>Add your AI key</button>
+        <label id="scan-pick" class="scan-pick">
+          <span>Photo of the prescription</span>
+          <input id="scan-file" type="file" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <p id="scan-status" class="status" role="status"></p>
+        <div id="scan-review" hidden>
+          <ul id="scan-lines" class="scan-lines"></ul>
+          <p class="small muted">Checking prices sends each medicine's name to this shop's stock service, not the photo. We only copy names: ask your doctor or pharmacist about medicines and doses.</p>
+          <div class="scan-actions">
+            <button id="scan-use" class="primary" type="button" disabled>Check prices here</button>
+            <button id="scan-clear" class="secondary" type="button">Discard</button>
+          </div>
+        </div>
+      </div>
+      <p id="list-empty" class="muted">Your list is empty.</p>
+      <ul id="list-rows" class="medicine-rows"></ul>
+      <p id="list-status" class="status" role="status"></p>
+      <div id="list-summary" hidden>
+        <p id="list-total" class="medicine-total" role="status"></p>
+        <p class="small muted">An estimate, not a bill. Prices are for packs. Stock can change, and you pay at the counter.</p>
+        <div class="scan-actions">
+          <button id="list-refresh" class="secondary" type="button">Refresh prices</button>
+          <button id="list-clear" class="secondary" type="button">Clear list</button>
+        </div>
+      </div>
+    </section>
+
