@@ -139,6 +139,28 @@ test("a counter bill is refused whole when any line cannot be billed", async () 
   assert.equal((await post(api, "/api/bill", {})).body.ok, false);
 });
 
+test("a quote totals only what the shop can supply, gives no counts and changes nothing", async () => {
+  const { api } = await shop("shanti_medical");
+  await post(api, "/api/holds", { itemId: "SM-1004", qty: 2, ...ASHA });
+  const before = (await get(api, "/api/stock/all")).body.items;
+  const { body } = await post(api, "/api/quote", { lines: [{ itemId: "SM-1003", qty: 2 }, { itemId: "SM-1004", qty: 2 }, { itemId: "SM-1005", qty: 1 }, { itemId: "SM-1008", qty: 1 }] });
+  assert.equal(body.total, "₹155");
+  assert.deepEqual(body.lines.map((line) => [line.enough, line.availability, line.prescription]), [[true, "in_stock", false], [false, "limited", false], [true, "in_stock", true], [false, "out_of_stock", false]]);
+  for (const line of body.lines) {
+    assert.deepEqual(Object.keys(line).filter((key) => ["held", "available", "left"].includes(key)), []);
+  }
+  assert.deepEqual((await get(api, "/api/stock/all")).body.items, before);
+  assert.deepEqual((await get(api, "/api/missed")).body.missed, []);
+});
+
+test("a bad quote list is refused", async () => {
+  const { api } = await shop("shanti_medical");
+  const line = { itemId: "SM-1002", qty: 1 };
+  for (const lines of [undefined, [], Array(13).fill(line), [null], [line, line], [{ itemId: "nope", qty: 1 }], ...[0, 6, 1.5, "1"].map((qty) => [{ ...line, qty }])]) {
+    assert.equal((await post(api, "/api/quote", { lines })).body.ok, false);
+  }
+});
+
 test("missed demand counts what people asked for that the shop could not give", async () => {
   const { api } = await shop("shanti_medical");
   await get(api, "/api/stock", { q: "unicorn tears" });
@@ -166,7 +188,7 @@ test("names and phone numbers never reach stock or missed answers, and are maske
 
 test("a hold check gives the shop's reason before any details are asked, and changes nothing", async () => {
   const { api } = await shop("shanti_medical", { extraCsvRows: "SM-X01,Controlled Tablets,Testamine,1 mg,strip of 10,X,10,5" });
-  assert.deepEqual((await get(api, "/api/holds/check", { itemId: "SM-1001", qty: "1" })).body, { ok: true, until: "11:00 pm", prescription: false });
+  assert.deepEqual((await get(api, "/api/holds/check", { itemId: "SM-1001", qty: "1" })).body, { ok: true, until: "11:00 pm", pickups: [{ value: "any", label: "Any time until 11:00 pm" }], prescription: false });
   assert.deepEqual((await get(api, "/api/holds/check", { itemId: "SM-1008", qty: "1" })).body, { ok: false, field: "qty", reason: "None left to hold." });
   assert.equal((await get(api, "/api/holds/check", { itemId: "SM-X01", qty: "1" })).body.field, "itemId");
   assert.equal((await get(api, "/api/holds/check", { itemId: "SM-1005", qty: "1" })).body.prescription, true);
@@ -343,4 +365,46 @@ test("unknown routes, wrong methods and bad bodies are refused", async () => {
   assert.equal((await get(api, "/api/sale")).status, 405);
   assert.equal((await post(api, "/api/holds", "not an object")).status, 400);
   assert.equal((await get(api, "/api/stock", { q: "  " })).status, 400);
+});
+
+test("a hold offers pickup times that fit, and takes the shopper's own time", async () => {
+  // Night Owl holds for two hours, until 12:45 am.
+  const { api } = await shop("night_owl_pharmacy");
+  const check = await get(api, "/api/holds/check", { itemId: "NO-202", qty: "1" });
+  assert.deepEqual(check.body.pickups.map((entry) => entry.value), ["30", "60", "90", "any"]);
+  const hold = async (pickup) => (await post(api, "/api/holds", { itemId: "NO-202", qty: 1, ...ASHA, pickup })).body;
+  const half = await hold("30");
+  assert.equal(half.pickup, "11:15 pm");
+  assert.equal(half.until, "12:45 am");
+  assert.match(half.summary, /Pickup planned by 11:15 pm\.$/);
+  assert.equal((await hold("00:10")).pickup, "12:10 am");
+  assert.equal((await hold("any")).pickup, "12:45 am");
+  for (const wrong of ["", "22:45", "21:00", "01:00", "25:00", "soon", null, 45]) {
+    assert.equal((await hold(wrong)).field, "pickup", String(wrong));
+  }
+  assert.equal((await get(api, "/api/holds")).body.holds[0].pickup, "12:45 am");
+});
+
+test("one hold takes several items under one code, and collects or releases them together", async () => {
+  const { api } = await shop("night_owl_pharmacy");
+  const more = [{ itemId: "NO-203", qty: 3 }, { itemId: "NO-205", qty: 1 }];
+  const request = { requestId: "form-many-1", itemId: "NO-202", qty: 2, more, ...ASHA };
+  assert.equal((await get(api, "/api/holds/check", { itemId: "NO-202", qty: "2", more: "NO-203:3,NO-205:1" })).body.ok, true);
+  const first = (await post(api, "/api/holds", request)).body;
+  assert.match(first.summary, /^2 × Paracetamol Tablets \(.+\) \+ 3 × Oral Rehydration Salts \(ORS\) \(.+\) \+ 1 × Cetirizine Tablets/);
+  assert.deepEqual((await post(api, "/api/holds", request)).body, first);
+  assert.equal((await post(api, "/api/holds", { ...request, more: [] })).body.field, "requestId");
+  const holds = (await get(api, "/api/holds")).body.holds;
+  assert.equal(holds.length, 1);
+  assert.match(holds[0].what, /3 × Oral/);
+  const count = async (id) => (await get(api, "/api/stock/all")).body.items.find((item) => item.id === id);
+  assert.equal((await count("NO-203")).held, 3);
+  assert.equal((await post(api, "/api/holds/collect", { code: first.code })).body.ok, true);
+  assert.deepEqual([(await count("NO-203")).qty, (await count("NO-203")).held, (await count("NO-202")).qty], [17, 0, 58]);
+  const short = (await post(api, "/api/holds", { itemId: "NO-202", qty: 1, more: [{ itemId: "NO-201", qty: 1 }], ...ASHA })).body;
+  assert.match(short.reason, /^Paracetamol Oral Suspension.*None left/);
+  for (const bad of ["x", [null], [{ itemId: "NO-202", qty: 1 }], Array(8).fill({ itemId: "NO-203", qty: 1 })]) {
+    assert.equal((await post(api, "/api/holds", { itemId: "NO-202", qty: 1, more: bad, ...ASHA })).body.ok, false);
+  }
+  assert.equal((await count("NO-202")).held, 0);
 });

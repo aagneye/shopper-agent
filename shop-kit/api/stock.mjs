@@ -275,3 +275,28 @@ export function searchStock(items, query) {
     .slice(0, MOST_MATCHES);
   return { ok: true, matches };
 }
+
+/**
+ * How much of an amount the shop can give now, in whole packs. It tells no more than the
+ * amount asked for.
+ *
+ * :param item: A stock item, with its pack in detail, such as "500 mg · strip of 10".
+ * :param available: Packs on the shelf and not on hold.
+ * :param need: How many.
+ * :param unit: "tablets" (or capsules), or "packs" of any kind.
+ * :return: {need, canGive, unit, packs, enough, cost, text}, or null when the item is not
+ *   counted in tablets.
+ */
+export function supplyOf(item, available, need, unit) {
+  const strip = /strip of (\d+)/i.exec(item.detail || "");
+  if (unit === "tablets" && !strip) {
+    return null;
+  }
+  const size = unit === "tablets" ? Number(strip[1]) : 1;
+  const packs = Math.min(Math.ceil(need / size), Math.max(0, available));
+  const canGive = Math.min(need, packs * size);
+  const cost = formatRupees(item.mrp * packs);
+  const what = strip ? "strip" : "pack";
+  const how = packs ? ` · ${packs} ${what}${packs === 1 ? "" : "s"}${strip ? ` of ${strip[1]}` : ""} · ${cost} total` : "";
+  return { need, canGive, unit, packs, enough: canGive === need, cost, text: `${canGive} of ${need} ${unit}${how}` };
+}

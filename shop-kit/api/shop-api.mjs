@@ -2,20 +2,24 @@
 // dashboard, its website tools and its agent bridge all call these routes on the shop's
 // own origin. No Node built-ins, so the same handlers can run in a serverless function.
 //
-// Agents only ever see stock bands, prices and hold rules. Shoppers' names and phone
+// Agents see stock bands, prices, hold rules and, for an amount they ask for, how much of it can be given. Shoppers' names and phone
 // numbers stay in the holds list, masked for the dashboard.
 import { areaNow, parseHHMM } from "../../sites/nearshelf/js/clock.js";
 import { DAYS, openState } from "../../sites/nearshelf/js/directory.js";
-import { band, formatRupees, holdKind, parseBillingCsv, searchStock } from "./stock.mjs";
+import { band, formatRupees, holdKind, parseBillingCsv, searchStock, supplyOf } from "./stock.mjs";
 
 const MOST_PER_SALE = 50;
 const MOST_LINES_PER_BILL = 30;
 const MOST_IMPORT_CHARS = 400 * 1024;
 const MOST_IMPORT_ITEMS = 5000;
 const MOST_PER_HOLD = 5;
+const MOST_LINES_PER_LIST = 12;
+const MOST_ITEMS_PER_HOLD = 8;
+const MOST_UNITS_ASKED = 500;
 const MOST_LOGGED = 500;
 const MOST_MISSED_SHOWN = 20;
 const ALL_DAY_HOLD_MINUTES = 120;
+const PICKUP_MINUTES = { 30: "Within 30 minutes", 60: "Within 1 hour", 90: "Within 1 hour 30 minutes", 120: "Within 2 hours" };
 
 /**
  * The state a shop starts from, or returns to on reset.
@@ -105,31 +109,42 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   const timeOf = (iso) => areaNow(new Date(iso), profile.timezone, null).time;
   // A hold is active until it is collected, released or past its time.
   const isActive = (hold) => !hold.outcome && Date.parse(hold.untilIso) > clock().getTime();
-  const heldOf = (state, itemId) => state.holds.filter((hold) => hold.itemId === itemId && isActive(hold)).reduce((sum, hold) => sum + hold.qty, 0);
+  // A hold's items: its first, and any more held under the same code.
+  const linesOf = (hold) => [{ itemId: hold.itemId, item: hold.item, qty: hold.qty }, ...(hold.more || [])];
+  const listText = (hold) => linesOf(hold).map((line) => `${line.qty} × ${line.item}`).join(" + ");
+  const heldOf = (state, itemId) => state.holds.filter(isActive).flatMap(linesOf).filter((line) => line.itemId === itemId).reduce((sum, line) => sum + line.qty, 0);
   const shopkeeperItem = (state, item) => {
     const held = heldOf(state, item.id);
     return { id: item.id, name: item.name, detail: item.detail, price: formatRupees(item.mrp), mrp: item.mrp, qty: item.qty, held, available: item.qty - held };
   };
 
   /**
-   * GET /api/stock?q=: bands for the items a shopper's words mean, and a missed-demand
-   * entry when nothing that matches fully is on the shelf.
+   * GET /api/stock?q=&amount=&unit=: bands for the items a shopper's words mean, and a missed-demand
+   * entry when nothing that matches fully is on the shelf. With an amount, each match also
+   * says how much of that amount the shop can give.
    */
   async function stock({ query }) {
     const state = await store.get();
     const text = clean(query.q).slice(0, 80);
+    const amount = query.amount === undefined ? null : Number(query.amount);
+    const unit = query.unit === "packs" ? "packs" : "tablets";
+    if (amount !== null && (!Number.isInteger(amount) || amount < 1 || amount > MOST_UNITS_ASKED)) {
+      return { status: 400, body: { ok: false, reason: `Ask for 1 to ${MOST_UNITS_ASKED}.` } };
+    }
     const search = searchStock(state.items, text);
     if (!search.ok) {
       return { status: 400, body: { ok: false, reason: search.reason } };
     }
     const matches = search.matches.map(({ item, match }) => {
       const available = item.qty - heldOf(state, item.id);
+      const supply = amount === null ? null : supplyOf(item, available, amount, unit);
       return {
         id: item.id,
         name: item.name,
         detail: item.detail,
         price: formatRupees(item.mrp),
         availability: band(available),
+        ...(supply ? { supply } : {}),
         hold: holdKind(item, available),
         match,
       };
@@ -236,6 +251,54 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
+   * POST /api/quote {lines: [{itemId, qty}]}: an estimate for a shopper's list, from live
+   * stock. The total counts only lines the shop can supply now. It gives bands, never
+   * counts, and changes nothing.
+   */
+  async function quote({ body }) {
+    const lines = body && Array.isArray(body.lines) ? body.lines : null;
+    if (!lines || lines.length === 0 || lines.length > MOST_LINES_PER_LIST) {
+      return refuse("lines", `Send 1 to ${MOST_LINES_PER_LIST} items.`);
+    }
+    const state = await store.get();
+    const answers = [];
+    const seen = new Set();
+    let total = 0;
+    for (const line of lines) {
+      const item = state.items.find((entry) => entry.id === (line && line.itemId));
+      if (!item) {
+        return refuse("lines", "One of the items is not sold here.");
+      }
+      if (seen.has(item.id)) {
+        return refuse("lines", `${item.name} is on the list twice.`);
+      }
+      seen.add(item.id);
+      if (!Number.isInteger(line.qty) || line.qty < 1 || line.qty > MOST_PER_HOLD) {
+        return refuse("lines", `${item.name}: choose 1 to ${MOST_PER_HOLD}.`);
+      }
+      const available = item.qty - heldOf(state, item.id);
+      const enough = line.qty <= available;
+      const amount = item.mrp * line.qty;
+      if (enough) {
+        total += amount;
+      }
+      answers.push({
+        itemId: item.id,
+        name: item.name,
+        detail: item.detail,
+        qty: line.qty,
+        price: formatRupees(item.mrp),
+        amount: formatRupees(amount),
+        availability: band(available),
+        enough,
+        hold: holdKind(item, available),
+        prescription: ["H", "H1", "X"].includes(item.schedule),
+      });
+    }
+    return { status: 200, body: { ok: true, asOf: now().time, lines: answers, total: formatRupees(total) } };
+  }
+
+  /**
    * The shop's own rules for holding an item, without the shopper's details: it exists,
    * the amount is allowed, it is not Schedule X, the shop is open and enough is free.
    *
@@ -268,6 +331,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     const untilDate = new Date(clock().getTime() + minutes * 60000);
     return {
       item,
+      minutes,
       untilDate,
       until: areaNow(untilDate, profile.timezone, null).time,
       prescription: holdKind(item, available) === "prescription",
@@ -275,35 +339,109 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
-   * GET /api/holds/check?itemId=&qty=: would the shop hold this? Changes nothing, so the
+   * Check a hold of one or more items: it is taken whole, or refused whole.
+   *
+   * :param state: The shop's state.
+   * :param itemId: The first item's id.
+   * :param qty: How many of it.
+   * :param more: Further [{itemId, qty}].
+   * :return: {refusal}, or holdRules() of the first item with every {item, qty} in lines.
+   */
+  function holdAll(state, itemId, qty, more) {
+    if (!Array.isArray(more) || more.length >= MOST_ITEMS_PER_HOLD || more.some((line) => !line || typeof line !== "object")) {
+      return { refusal: refuse("itemId", `Hold up to ${MOST_ITEMS_PER_HOLD} items at once.`) };
+    }
+    const asked = [{ itemId, qty }, ...more];
+    if (new Set(asked.map((line) => line.itemId)).size !== asked.length) {
+      return { refusal: refuse("itemId", "List each item once.") };
+    }
+    const checked = [];
+    for (const line of asked) {
+      const rules = holdRules(state, line.itemId, line.qty);
+      if (rules.refusal) {
+        const item = state.items.find((entry) => entry.id === line.itemId);
+        const { field, reason } = rules.refusal.body;
+        return asked.length > 1 && item ? { refusal: refuse(field, `${item.name}: ${reason}`) } : rules;
+      }
+      checked.push({ ...rules, qty: line.qty });
+    }
+    return { ...checked[0], prescription: checked.some((rules) => rules.prescription), lines: checked.map((rules) => ({ item: rules.item, qty: rules.qty })) };
+  }
+
+  /**
+   * GET /api/holds/check?itemId=&qty=&more=ID:2,ID:1: would the shop hold this? Changes nothing, so the
    * hold form can give the shop's reason before it asks for anyone's details.
    */
   async function checkHold({ query }) {
     const state = await store.get();
-    const rules = holdRules(state, String(query.itemId ?? ""), Number(query.qty ?? 1));
+    const more = String(query.more ?? "").split(",").filter(Boolean).map((part) => {
+      const [id, count] = part.split(":");
+      return { itemId: id, qty: Number(count) };
+    });
+    const rules = holdAll(state, String(query.itemId ?? ""), Number(query.qty ?? 1), more);
     if (rules.refusal) {
       return rules.refusal;
     }
-    return { status: 200, body: { ok: true, until: rules.until, prescription: rules.prescription } };
+    return { status: 200, body: { ok: true, until: rules.until, pickups: pickupsFor(rules), prescription: rules.prescription } };
+  }
+
+  /**
+   * The pickup times to offer: only those before the hold would end.
+   *
+   * :param rules: A holdRules() result.
+   * :return: [{value, label}].
+   */
+  function pickupsFor(rules) {
+    return [
+      ...Object.entries(PICKUP_MINUTES)
+        .filter(([minutes]) => Number(minutes) < rules.minutes)
+        .map(([value, label]) => ({ value, label })),
+      { value: "any", label: `Any time until ${rules.until}` },
+    ];
+  }
+
+  /**
+   * Read the pickup time a shopper chose. It tells the shop when to expect them; the hold
+   * still lasts until its own end.
+   *
+   * :param pickup: "30", "60", "90", "120", "any", an own time as "HH:MM", or undefined.
+   * :param rules: A holdRules() result.
+   * :return: {by}, a clock time, or {refusal}.
+   */
+  function readPickup(pickup, rules) {
+    if (pickup === undefined || pickup === "any") {
+      return { by: rules.until };
+    }
+    const at = /^([01]\d|2[0-3]):[0-5]\d$/.test(pickup) ? parseHHMM(pickup) : null;
+    if (at === null && !Object.hasOwn(PICKUP_MINUTES, String(pickup))) {
+      return { refusal: refuse("pickup", "Choose when you will pick it up.") };
+    }
+    const wait = at === null ? Math.min(Number(pickup), rules.minutes) : (at - now().minutes + 1440) % 1440;
+    if (wait < 1 || wait > rules.minutes) {
+      return { refusal: refuse("pickup", `Choose a time after now and not later than ${rules.until}.`) };
+    }
+    return { by: timeOf(new Date(clock().getTime() + wait * 60000).toISOString()) };
   }
 
   /**
    * The answer for a hold that was taken: the code and what is held, never the details.
    *
    * :param hold: The hold as stored.
-   * :param item: Its item.
+   * :param items: The shop's items.
    * :return: The response.
    */
-  function holdAnswer(hold, item) {
-    const prescription = item.schedule === "H" || item.schedule === "H1";
-    const what = `${hold.qty} × ${item.name}${item.detail ? ` (${item.detail})` : ""}`;
+  function holdAnswer(hold, items) {
+    const lines = linesOf(hold).map((line) => ({ ...line, entry: items.find((item) => item.id === line.itemId) || {} }));
+    const prescription = lines.some(({ entry }) => entry.schedule === "H" || entry.schedule === "H1");
+    const what = lines.map(({ qty, item, entry }) => `${qty} × ${item}${entry.detail ? ` (${entry.detail})` : ""}`).join(" + ");
     return {
       status: 200,
       body: {
         ok: true,
         code: hold.code,
         until: hold.until,
-        summary: `${what} held at ${profile.name} until ${hold.until}.`,
+        summary: `${what} held at ${profile.name} until ${hold.until}.${hold.pickup && hold.pickup !== hold.until ? ` Pickup planned by ${hold.pickup}.` : ""}`,
+        ...(hold.pickup ? { pickup: hold.pickup } : {}),
         prescription,
         ...(prescription ? { note: "Bring the prescription: the pharmacist checks it at the counter." } : {}),
       },
@@ -311,8 +449,8 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   }
 
   /**
-   * POST /api/holds {requestId, itemId, qty, name, phone}: hold items for pickup until
-   * closing. The same requestId sent again, after an answer was lost, gets the same hold
+   * POST /api/holds {requestId, itemId, qty, more, name, phone, pickup}: hold items for pickup
+   * until closing, all under one code. more is further [{itemId, qty}]. pickup says when the shopper plans to come. The same requestId sent again, after an answer was lost, gets the same hold
    * back instead of a second one. The shop's rules for the item come next, then the
    * shopper's details, which stay here; the answer has only the code and what is held.
    */
@@ -324,12 +462,14 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     }
     const earlier = requestId && state.holds.find((hold) => hold.requestId === requestId);
     if (earlier) {
-      if (earlier.itemId !== body.itemId || earlier.qty !== body.qty) {
+      const asked = [{ itemId: body.itemId, qty: body.qty }, ...(Array.isArray(body.more) ? body.more : [])];
+      const same = JSON.stringify(linesOf(earlier).map(({ itemId, qty }) => [itemId, qty])) === JSON.stringify(asked.map((line) => [line?.itemId, line?.qty]));
+      if (!same) {
         return refuse("requestId", "That request id was used for another hold.");
       }
-      return holdAnswer(earlier, state.items.find((item) => item.id === earlier.itemId) || { name: earlier.item, detail: "" });
+      return holdAnswer(earlier, state.items);
     }
-    const rules = holdRules(state, body.itemId, body.qty);
+    const rules = holdAll(state, body.itemId, body.qty, body.more ?? []);
     if (rules.refusal) {
       return rules.refusal;
     }
@@ -341,23 +481,29 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     if (!phone) {
       return refuse("phone", "Enter a 10-digit mobile number.");
     }
+    const pickup = readPickup(body.pickup, rules);
+    if (pickup.refusal) {
+      return pickup.refusal;
+    }
     const { item, untilDate, until } = rules;
     const hold = {
       code: newCode(state),
       itemId: item.id,
       item: item.name,
       qty: body.qty,
+      ...(rules.lines.length > 1 ? { more: rules.lines.slice(1).map((line) => ({ itemId: line.item.id, item: line.item.name, qty: line.qty })) } : {}),
       name,
       phone,
       at: clock().toISOString(),
       untilIso: untilDate.toISOString(),
       until,
+      pickup: pickup.by,
       ...(requestId ? { requestId } : {}),
     };
     state.holds.push(hold);
     state.holds.splice(0, Math.max(0, state.holds.length - MOST_LOGGED));
     await store.set(state);
-    return holdAnswer(hold, item);
+    return holdAnswer(hold, state.items);
   }
 
   /**
@@ -369,9 +515,11 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
       code: hold.code,
       item: hold.item,
       qty: hold.qty,
+      what: listText(hold),
       name: hold.name.split(" ")[0],
       phone: `••••••••${hold.phone.slice(-2)}`,
       until: hold.until,
+      pickup: hold.pickup || hold.until,
       at: timeOf(hold.at),
       status: hold.outcome || (isActive(hold) ? "held" : "expired"),
     }));
@@ -412,19 +560,21 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
       return found.refusal;
     }
     const { hold } = found;
-    const item = state.items.find((entry) => entry.id === hold.itemId);
-    if (!item || item.qty < hold.qty) {
+    const lines = linesOf(hold).map((line) => ({ qty: line.qty, item: state.items.find((entry) => entry.id === line.itemId) }));
+    if (lines.some(({ item, qty }) => !item || item.qty < qty)) {
       return refuse("code", `The units held for ${hold.code} are no longer in stock.`);
     }
-    item.qty -= hold.qty;
     hold.outcome = "collected";
     hold.endedAt = clock().toISOString();
-    state.sales.push({ itemId: item.id, qty: hold.qty, at: hold.endedAt, hold: hold.code });
+    for (const { item, qty } of lines) {
+      item.qty -= qty;
+      state.sales.push({ itemId: item.id, qty, at: hold.endedAt, hold: hold.code });
+    }
     state.sales.splice(0, Math.max(0, state.sales.length - MOST_LOGGED));
     await store.set(state);
     return {
       status: 200,
-      body: { ok: true, code: hold.code, summary: `${hold.code} collected: billed ${hold.qty} × ${item.name}.`, item: shopkeeperItem(state, item) },
+      body: { ok: true, code: hold.code, summary: `${hold.code} collected: billed ${listText(hold)}.`, item: shopkeeperItem(state, lines[0].item) },
     };
   }
 
@@ -442,7 +592,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
     hold.outcome = "released";
     hold.endedAt = clock().toISOString();
     await store.set(state);
-    return { status: 200, body: { ok: true, code: hold.code, summary: `${hold.code} released: ${hold.qty} × ${hold.item} back on the shelf.` } };
+    return { status: 200, body: { ok: true, code: hold.code, summary: `${hold.code} released: ${listText(hold)} back on the shelf.` } };
   }
 
   /**
@@ -571,6 +721,7 @@ export function createShopApi({ profile, items, store, clock = () => new Date(),
   const routes = {
     "/api/stock": { GET: stock },
     "/api/stock/all": { GET: stockAll },
+    "/api/quote": { POST: quote },
     "/api/sale": { POST: sale },
     "/api/bill": { POST: bill },
     "/api/holds": { GET: listHolds, POST: createHold },

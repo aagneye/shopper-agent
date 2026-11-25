@@ -128,3 +128,13 @@ test("rupee amounts read as shoppers expect", () => {
   assert.equal(formatRupees(38.5), "₹38.50");
   assert.equal(formatRupees(1450), "₹1,450");
 });
+
+test("supply is given in whole strips, and never beyond the amount asked for", async () => {
+  const { supplyOf } = await import("../api/stock.mjs");
+  const item = { detail: "500 mg · strip of 10", mrp: 15 };
+  assert.equal(supplyOf(item, 40, 14, "tablets").text, "14 of 14 tablets · 2 strips of 10 · ₹30 total");
+  assert.deepEqual([supplyOf(item, 1, 14, "tablets").canGive, supplyOf(item, 1, 14, "tablets").enough], [10, false]);
+  assert.equal(supplyOf(item, 0, 14, "tablets").text, "0 of 14 tablets");
+  assert.equal(supplyOf({ detail: "60 ml bottle", mrp: 38 }, 2, 3, "packs").text, "2 of 3 packs · 2 packs · ₹76 total");
+  assert.equal(supplyOf({ detail: "60 ml bottle", mrp: 38 }, 2, 14, "tablets"), null);
+});
