@@ -24,7 +24,7 @@ const WRITE_ACTION = "show_results";
 const BASE = "http://127.0.0.1:8080";
 const PARTNER_ORIGIN = "http://localhost:8081";
 // Most characters one model call may send: the system prompt and every tool definition.
-const CALL_BUDGET = 16000;
+const CALL_BUDGET = 19000;
 // The template's partner rules, as its own test checks them
 // (vendor/agentify-website/templates/tests/agentified.test.mjs). The build only warns
 // when they drift, so these keep every rule that guards what reaches a partner site.
@@ -274,7 +274,7 @@ class NearShelfSiteTest {
   static async testFindShopsRunsAsTool() {
     const loaded = await NearShelfSiteTest.load();
     const registry = await NearShelfSiteTest.registry();
-    const model = new ScriptedModel([{ tool: "website_find_shops", arguments: { category: "pharmacy" } }, { text: "Two pharmacies are open." }]);
+    const model = new ScriptedModel([{ tool: "website_find_shops", arguments: { category: "pharmacy", medicines: [{ name: "ORS", amount: "2 sachets" }] } }, { text: "Two pharmacies are open." }]);
     const ctx = NearShelfSiteTest.context(loaded, registry, model, NearShelfSiteTest.approve);
     await runAgent(ctx, ctx.frontMan, "Which pharmacies are open now?", null, []);
     const receipt = model.toolResults(1)[0];
@@ -377,7 +377,7 @@ class NearShelfSiteTest {
     const chatInput = new StubElement("textarea");
     document.provide("#ns-input", [chatInput]);
     AssistantMount.defaultConsent = NearShelfSiteTest.pendingCard;
-    const answer = AssistantMount.consent({ kind: "network", peerLabel: "Shanti Medical", peerOrigin: "localhost:8081", requestText: "Do you have ORS sachets?" });
+    const answer = AssistantMount.consent({ kind: "network", peerLabel: "Other site", peerOrigin: "other.example", requestText: "Do you have ORS sachets?" });
     assert.equal(newest.card.getAttribute("role"), "group");
     assert.equal(newest.card.getAttribute("aria-label"), newest.title.textContent);
     assert.equal(newest.title.tabIndex, -1);
@@ -400,7 +400,7 @@ class NearShelfSiteTest {
     document.activeElement = field;
     try {
       AssistantMount.defaultConsent = NearShelfSiteTest.pendingCard;
-      const answer = AssistantMount.consent({ kind: "network", peerLabel: "Shanti Medical", peerOrigin: "localhost:8081", requestText: "Do you have ORS sachets?" });
+      const answer = AssistantMount.consent({ kind: "network", peerLabel: "Other site", peerOrigin: "other.example", requestText: "Do you have ORS sachets?" });
       assert.equal(newest.card.getAttribute("role"), "group");
       assert.notEqual(newest.title.focused, true);
       NearShelfSiteTest.answerCard("decline");
@@ -411,6 +411,41 @@ class NearShelfSiteTest {
     }
   }
 
+  static async testDirectoryShopsNeedNoCard() {
+    let cards = 0;
+    AssistantMount.defaultConsent = async () => {
+      cards += 1;
+      return "decline";
+    };
+    for (const place of App.page.directory.places) {
+      assert.equal(await AssistantMount.consent({ kind: "network", peerOrigin: new URL(place.agent.network).host }), "allow");
+    }
+    assert.equal(cards, 0);
+    for (const info of [{ kind: "network", peerOrigin: "other.example" }, { kind: "network", peerOrigin: "localhost:9999" }, { kind: "mcp", peerOrigin: "localhost:8081" }]) {
+      assert.equal(await AssistantMount.consent(info), "decline");
+    }
+    assert.equal(cards, 3);
+  }
+
+  static testChatNamesTheShopBeingAsked() {
+    const box = new StubElement("div");
+    document.provide("#ns-msgs", [box]);
+    const texts = () => box.children.map((line) => line.textContent);
+    const show = (phase, id, peerOrigin, status) => AssistantMount.showChecking({ kind: "remote_call", phase, id, peerOrigin, status });
+    AssistantMount.showChecking({ kind: "run", phase: "start" });
+    show("start", "s1", "localhost:8081");
+    assert.deepEqual(texts(), ["Checking Shanti Medical…"]);
+    show("end", "s1", "localhost:8081", "ok");
+    show("start", "s2", "[::1]:8082");
+    assert.deepEqual(texts(), ["Checked Shanti Medical.", "Checking another pharmacy: Night Owl Pharmacy…"]);
+    show("end", "s2", "[::1]:8082", "error");
+    show("start", "s3", "other.example");
+    assert.deepEqual(texts(), ["Checked Shanti Medical.", "Could not check Night Owl Pharmacy."]);
+    AssistantMount.showChecking({ kind: "run", phase: "start" });
+    show("start", "s4", "[::1]:8082");
+    assert.equal(texts()[2], "Checking Night Owl Pharmacy…");
+  }
+
   static async testSearchFormSendsToTheChat() {
     const sent = [];
     App.page.onAsk = (text) => {
@@ -418,12 +453,12 @@ class NearShelfSiteTest {
       return true;
     };
     try {
-      document.getElementById("need-input").value = "ORS sachets";
+      document.getElementById("need-input").value = "5 ORS sachets";
       document.getElementById("need-category").value = "pharmacy";
       document.getElementById("need-open-now").checked = true;
       document.getElementById("need-form").dispatch("submit");
-      assert.deepEqual(sent, ["Medicine: ORS sachets. Ask pharmacies that are open now whether they have it, and compare their answers."]);
-      assert.equal(document.getElementById("need-status").textContent, "Asking nearby shops. Approve each shop in the chat.");
+      assert.deepEqual(sent, ["Medicine: 5 ORS sachets. I need 5 sachets."]);
+      assert.equal(document.getElementById("need-status").textContent, "Asking nearby shops, one at a time. Watch the chat.");
     } finally {
       App.page.onAsk = null;
     }
@@ -469,5 +504,7 @@ test("the page has no template text left and loads site.js", NearShelfSiteTest.t
 test("a shop's action gets the runtime's dialog, not this page's", NearShelfSiteTest.testPartnerActionGetsRuntimeDialog);
 test("chat forms with several actions get the runtime's dialog", NearShelfSiteTest.testOtherBundlesGetRuntimeDialog);
 test("the consent card gets focus, and focus then returns to the chat", NearShelfSiteTest.testConsentFocusesTheCardThenTheChat);
+test("the directory's shops need no consent card, and any other site does", NearShelfSiteTest.testDirectoryShopsNeedNoCard);
+test("the chat names each shop while it is asked", NearShelfSiteTest.testChatNamesTheShopBeingAsked);
 test("a visitor typing in the page's form keeps focus when a consent card appears", NearShelfSiteTest.testConsentLeavesFocusInThePage);
 test("the search form hands its request to the chat", NearShelfSiteTest.testSearchFormSendsToTheChat);

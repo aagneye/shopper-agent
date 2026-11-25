@@ -99,11 +99,13 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 24px 48px; }
   padding: 22px; box-shadow: var(--shadow);
 }
 .need-label { display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
-#need-input {
+#need-input, #need-amount {
   width: 100%; font: inherit; font-size: 1.05rem; padding: 12px 14px;
   border: 1.5px solid var(--line); border-radius: 12px; background: #fffdf8;
 }
-#need-input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-tint); }
+#need-amount { margin-top: 10px; }
+#need-amount[hidden] { display: none; }
+#need-input:focus, #need-amount:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-tint); }
 .need-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
 .need-row select {
   font: inherit; padding: 9px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
@@ -138,6 +140,24 @@ button { font: inherit; cursor: pointer; }
 }
 .chip:hover { border-color: var(--brand); color: var(--brand); }
 
+/* Prescription scan */
+.scan { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+#scan-panel { margin-top: 12px; }
+.scan-pick { display: grid; gap: 6px; font-weight: 600; }
+.scan-pick input { font: inherit; font-weight: 400; max-width: 100%; }
+.scan-pick { margin-top: 12px; }
+.scan-pick input:disabled { opacity: 0.5; cursor: not-allowed; }
+.scan-lines { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+.scan-line { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.scan-unsure { border-color: var(--accent); background: var(--accent-tint); }
+.scan-field span { display: block; font-size: 0.8rem; color: var(--muted); }
+.scan-field input { width: 100%; font: inherit; padding: 7px 9px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; }
+.scan-name, .scan-check { grid-column: 1 / -1; }
+.scan-check { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.scan-remove { justify-self: start; }
+.scan-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* Main layout */
 .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 24px; align-items: start; }
 .col-side { display: grid; gap: 16px; position: sticky; top: 12px; }
@@ -171,7 +191,7 @@ button { font: inherit; cursor: pointer; }
 
 /* Holds */
 .hold {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 2px 12px; align-items: center;
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center;
   border: 1px dashed #c9bfa9; border-radius: 12px; padding: 10px 12px; background: #fffaf0;
 }
 .hold-code {
@@ -180,7 +200,8 @@ button { font: inherit; cursor: pointer; }
 }
 .hold-item { font-weight: 600; }
 .hold-where { grid-column: 2; font-size: 0.85rem; color: var(--muted); }
-.hold .link-button { grid-row: 1 / span 2; grid-column: 3; }
+.hold-tools { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 0.875rem; }
+.hold.is-expired { opacity: 0.65; }
 
 /* Shops */
 .shop { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
@@ -282,6 +303,10 @@ button { font: inherit; cursor: pointer; }
    has been sent. Hide it until the visitor answers. */
 #agent-app .ns-msgs:has(.ns-consent-actions) > .ns-turn-status { display: none; }
 #agent-app .ns-msg { overflow-wrap: break-word; }
+#agent-app .ns-holds button { display: block; width: 100%; margin-top: 6px; padding: 8px 10px; text-align: left; font: inherit; font-weight: 600; color: #fff; background: var(--brand); border: 0; border-radius: 8px; cursor: pointer; }
+#agent-app .ns-holds button:disabled { opacity: 0.6; cursor: default; }
+#agent-app .ns-holds p { margin: 0; }
+#agent-app .ns-checking { padding-block: 4px; font-size: 0.875em; opacity: 0.85; }
 #agent-app .ns-consent-actions { flex-wrap: wrap; }
 #agent-app .ns-consent-actions button { white-space: nowrap; }
 

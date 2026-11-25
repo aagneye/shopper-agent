@@ -22,7 +22,6 @@ class SiteActions {
     actions.register(SiteActions.findShops());
     actions.register(SiteActions.planFewestStops());
     actions.register(SiteActions.showResults());
-    actions.register(SiteActions.saveHold());
   }
 
   /**
@@ -66,7 +65,7 @@ class SiteActions {
   static findShops() {
     return {
       name: "find_shops",
-      description: "List the shops to ask about an item, from the Neem Chowk directory: up to 4 open, verified shops of one category, nearest first. askWith is the partner tool to call for each shop, and page is its website. notAsked says why other shops are left out. Call it before asking any shop, in each turn that asks shops. To ask more shops, call it again with exclude.",
+      description: "List the shops to ask about an item, from the Neem Chowk directory: up to 4 open, verified shops of one category, nearest first. askWith is the partner tool to call for each shop, and page is its website. notAsked says why other shops are left out. For a medicine, pass medicines with the amount in the visitor's words; it counts the tablets, and ask is the request to send. If it says the amount is missing, ask the visitor. Call it before asking any shop, in each turn that asks shops. To ask more shops, call it again with exclude.",
       effect: "read",
       inputSchema: {
         type: "object",
@@ -77,6 +76,20 @@ class SiteActions {
             type: "string",
             enum: ["pharmacy", "auto_parts", "parts_catalogue"],
             description: "pharmacy for medicines, auto_parts for vehicle parts, parts_catalogue for part numbers.",
+          },
+          medicines: {
+            type: "array",
+            maxItems: 8,
+            description: "The medicines to ask pharmacies for.",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["name", "amount"],
+              properties: {
+                name: { type: "string", minLength: 1, maxLength: 80, description: "Name, strength and form." },
+                amount: { type: "string", maxLength: 80, description: "The visitor's own words, such as \"14 tablets\" or \"2 times a day for 1 week\". \"\" if they did not say. Never make one up." },
+              },
+            },
           },
           openNow: { type: "boolean", description: "List only shops open now. Default true." },
           limit: { type: "integer", minimum: 1, maximum: 4, description: "How many shops to list. Default 4." },
@@ -177,31 +190,6 @@ class SiteActions {
         },
       },
       execute: (args) => App.page.showResults(args),
-    };
-  }
-
-  /**
-   * The write that keeps a hold code.
-   *
-   * :return: The action definition.
-   */
-  static saveHold() {
-    return {
-      name: "save_hold",
-      description: "Keep a shop's hold in My holds on this page. Call it only when the visitor asks for a hold and the shop's reply gives a hold code. Pass the code and time exactly as the shop gave them. It does not contact the shop.",
-      effect: "write",
-      inputSchema: {
-        type: "object",
-        additionalProperties: false,
-        required: ["shopId", "item", "code"],
-        properties: {
-          shopId: { type: "string", enum: SiteActions.shopIds(), description: "The shop that holds the item." },
-          item: { type: "string", minLength: 1, maxLength: 120, description: "The item held." },
-          code: { type: "string", minLength: 1, maxLength: 40, description: "The hold code from the shop's reply." },
-          until: { type: "string", maxLength: 60, description: "Until when the shop holds it." },
-        },
-      },
-      execute: (args) => App.page.saveHold(args),
     };
   }
 }

@@ -57,7 +57,7 @@ async function run(actions, name, args) {
   return receipts[0];
 }
 
-test("exactly five website tools are registered, all local-only, with the planned effects", async () => {
+test("exactly four website tools are registered, all local-only, with the planned effects", async () => {
   const actions = await registry();
   const effects = Object.fromEntries(actions.catalog(SCOPE).map((entry) => [entry.name, [entry.effect, entry.availability]]));
   assert.deepEqual(effects, {
@@ -65,7 +65,6 @@ test("exactly five website tools are registered, all local-only, with the planne
     find_shops: ["read", "local-only"],
     plan_fewest_stops: ["read", "local-only"],
     show_results: ["write", "local-only"],
-    save_hold: ["write", "local-only"],
   });
 });
 
@@ -80,7 +79,7 @@ test("no description or schema is left as a TODO, and writes run only when the v
 });
 
 test("find_shops gives the partner tool to ask for each open pharmacy", async () => {
-  const receipt = await run(await registry(), "find_shops", { category: "pharmacy" });
+  const receipt = await run(await registry(), "find_shops", { category: "pharmacy", medicines: [{ name: "ORS", amount: "2 sachets" }] });
   assert.equal(receipt.status, "succeeded");
   assert.deepEqual(receipt.result.shops.map((shop) => shop.askWith), ["shanti_medical", "night_owl_pharmacy"]);
   assert.equal(receipt.result.now.time, "10:45 pm");
@@ -105,13 +104,6 @@ test("show_results puts the answers on the board", async () => {
   assert.equal(receipt.status, "succeeded");
   assert.deepEqual(receipt.result, { ok: true, need: "ORS sachets", shown: 1 });
   assert.equal(document.getElementById("results").children.length, 1);
-});
-
-test("save_hold keeps the shop's hold code in My holds", async () => {
-  const receipt = await run(await registry(), "save_hold", { shopId: "night_owl_pharmacy", item: "ORS sachets 21 g", code: "H-7310", until: "8:00 am" });
-  assert.equal(receipt.status, "succeeded");
-  assert.equal(receipt.result.ok, true);
-  assert.ok(App.page.getState().holds.some((hold) => hold.code === "H-7310" && hold.shop === "Night Owl Pharmacy"));
 });
 
 test("plan_fewest_stops plans from the shops' answers", async () => {

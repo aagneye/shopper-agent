@@ -262,6 +262,40 @@ export class ProfileStore {
   }
 
   /**
+   * Save several items to My list, all or none. Items already on the list are skipped.
+   *
+   * :param items: [{name, qty}].
+   * :return: {ok: true, saved, added, list} or {ok: false, field, reason}.
+   */
+  addListItems(items) {
+    this.sync();
+    const have = new Set(this.data.list.map((entry) => entry.label.toLowerCase()));
+    const records = [];
+    for (const item of items) {
+      const name = clean(item.name);
+      const qty = clean(item.qty);
+      if (!name || name.length > 80) {
+        return { ok: false, field: "name", reason: "Each item needs a name of up to 80 characters." };
+      }
+      if (qty.length > 20) {
+        return { ok: false, field: "qty", reason: "Keep the quantity under 20 characters." };
+      }
+      const label = qty ? `${name} × ${qty}` : name;
+      if (!have.has(label.toLowerCase())) {
+        have.add(label.toLowerCase());
+        records.push({ id: newId("i"), name, qty, label });
+      }
+    }
+    const room = MOST_LIST_ITEMS - this.data.list.length;
+    if (records.length > room) {
+      return { ok: false, field: "list", reason: `My list has room for ${room} more. Remove some items first.` };
+    }
+    this.data.list.push(...records);
+    const saved = this.save();
+    return { ok: true, saved, added: records.length, list: this.profile.list };
+  }
+
+  /**
    * Remove an item from My list.
    *
    * :param id: The item's id.
@@ -275,17 +309,17 @@ export class ProfileStore {
    * Keep a hold code a shop gave. The same code from the same shop is kept once, and
    * only the newest 20 holds are kept.
    *
-   * :param hold: {shopId, shopName, item, code, until}.
+   * :param hold: {shopId, shopName, item, code, until, pickup}.
    * :return: {ok: true, saved, duplicate, hold, holds} or {ok: false, field, reason}.
    */
-  addHold({ shopId, shopName, item, code, until }) {
+  addHold({ shopId, shopName, item, code, until, pickup }) {
     this.sync();
     const cleanItem = clean(item);
     const cleanCode = clean(code);
     if (!clean(shopId)) {
       return { ok: false, field: "shopId", reason: "Say which shop holds the item." };
     }
-    if (!cleanItem || cleanItem.length > 120) {
+    if (!cleanItem || cleanItem.length > 400) {
       return { ok: false, field: "item", reason: "Say which item is held." };
     }
     if (!cleanCode || cleanCode.length > 40) {
@@ -302,6 +336,7 @@ export class ProfileStore {
       item: cleanItem,
       code: cleanCode,
       until: clean(until).slice(0, 60),
+      pickup: clean(pickup).slice(0, 60),
       savedAt: new Date().toISOString(),
     };
     this.data.holds.push(record);

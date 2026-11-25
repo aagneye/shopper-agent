@@ -37,7 +37,7 @@
   "peer_policy": {
     "mode": "closed",
     "deny_origins": [],
-    "note": "Calls only the Neem Chowk shop and parts catalogue sites in allowed_peers, after the visitor agrees."
+    "note": "Calls only the Neem Chowk shop and parts catalogue sites in allowed_peers, when the visitor asks NearShelf."
   },
   "agent_mcp": {
     "protocol": "nsdeploy-agent-mcp/v1",
@@ -83,8 +83,7 @@
       "get_shopper_state",
       "find_shops",
       "plan_fewest_stops",
-      "show_results",
-      "save_hold"
+      "show_results"
     ]
   }
 }

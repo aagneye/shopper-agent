@@ -3,9 +3,9 @@
 NearShelf is the shopper's own agent site in the Neem Chowk demo. You tell it what you need, such as a medicine or a vehicle part. It then:
 
 - picks up to four open, verified shops near you from the area's places directory;
-- asks each shop's own agent network, after you agree on a consent card;
+- asks each shop's own agent network, one at a time, until one has the item;
 - puts the answers on a results board, with the time each shop checked its stock;
-- keeps any hold code a shop gives you.
+- keeps any hold code a shop gives you in My holds. The page saves it from the shop's own tool result, not from the AI's words.
 
 Your saved details (spot, vehicles, regular medicines, holds) are stored only in this browser and never sent to shops. When the assistant reads them, they go to the AI provider you choose, along with your messages.
 
@@ -33,7 +33,8 @@ The page works without a key: you can browse shops, set your spot and demo time,
 | Data | Goes to |
 |---|---|
 | Your messages and the page data the agent reads | The AI provider you choose in the settings, and nowhere else |
-| A request to a shop, such as "Do you have ORS sachets?" | That shop's agent network, after you approve its consent card |
+| A request to a shop, such as "Do you have ORS sachets?" | That shop's agent network, when you ask NearShelf |
+| A prescription photo you scan | Your AI provider only, after the page names it. NearShelf does not save it. The list you check is saved to My list |
 | Your name and phone for a hold | Typed in the shop's own window, so they never pass through an agent |
 | Spot, vehicles, list, holds | Stored in this browser only (localStorage `nearshelf.profile.v1`). They reach the AI provider only when the assistant reads them |
 
@@ -54,7 +55,6 @@ Website tools (`agent-manifest.json` → `actions.agentTools`), all from `site-a
 | `website_find_shops` | read | `App.page.findShops()`: up to 4 open, verified shops, nearest first, each with the partner tool to call |
 | `website_plan_fewest_stops` | read | `App.page.planStops()`: fewest shops that cover a list |
 | `website_show_results` | write | `App.page.showResults()`: fills the results board |
-| `website_save_hold` | write | `App.page.saveHold()`: keeps a shop's hold code in My holds |
 
 Other agent sites can call this network, but they get no website tools, because NearShelf's bridge shares none. Their assistant can only say what NearShelf does.
 
@@ -71,12 +71,15 @@ NearShelf asks these partner networks. They are in `sites/`, and `npm run dev` s
 | Speedline Moto Parts | `http://[::1]:8085/speedline_moto_parts` | front agent |
 | Vayu Parts Catalogue | `http://[::1]:8086/vayu_parts_catalogue` | fitment specialist |
 
-How the consent card works:
+How shops are asked:
 
-- Before any contact, a card names the shop, its host and the first 140 characters of the request. **Always allow** skips the card for that host until the page is reloaded.
-- A request names the item, its strength or part number, and the quantity. The agent is told to ask a shop only about the item, and never to put names, emails, phone numbers or booking codes in a request. The runtime does not filter requests, so check what the card shows.
+- Asking NearShelf is your OK to ask the shops in its directory, so there is no card for each shop (`consent` in `site.js`). The chat shows each shop's name while it is asked. Any other site still needs the runtime's consent card.
+- The agent is told to ask the nearest open shop first, and the next one only for what is missing. It asks more shops when you want to compare. The model decides, so a weak model may ask more.
+- Each shop has 90 seconds to answer, plus 45 for each further medicine, and a whole message 20 minutes (`js/shop-clock.js`). A slow shop is dropped and the assistant is told to ask the next one. A shop that has started a hold is not timed.
+- A medicine needs an amount. "2 times a day for 1 week" is counted by the page (`js/amount.js`), 1 each time unless you say more: 14 tablets. Without an amount, pharmacies are not asked. A shop says how much of that amount it can give, in whole strips. If no shop has it all, two or more are put together, same strength only. The counts come from each shop's stock tool, and the page adds them up.
+- A hold is still confirmed by you, in the shop's own window.
+- A request names the item, its strength or part number, and the quantity. The agent is told to ask a shop only about the item, and never to put names, emails, phone numbers or booking codes in a request. The runtime does not filter requests.
 - A shop's network runs in this browser on your AI provider and key. It gets only the actions that shop's own bridge shares with NearShelf.
-- A call costs more than the card's token estimate.
 
 These partner URLs work only on this machine. Before hosting, the release step puts each partner's https URL in `tools`, `link_labels` and `allowed_peers`, then rebuilds.
 
@@ -112,8 +115,7 @@ npm test                  # every test
 - **Writes run without a dialog.** `write` tools (the results board, My holds) run without showing the visitor first, which spec §3.1 asks for. Both change only this page's own panels.
 - **Every agent sees every website tool.** Each agent's instructions say which tools are its job.
 - **At most 4 partner calls per message, and 1 per partner.** The agent asks a shortlist and offers to ask more in the next message.
-  - A call over the limit still shows its card first; allowing it only skips the call.
   - A partner that accepts the connection but never answers leaves the chat waiting until the page is reloaded.
-- **The consent card shows only part of the request.** It shows the first 140 characters, and the partner gets all of it.
+- **The chat shows which shop is asked, not the request's text.**
 - **The AI provider must allow browser (CORS) requests.** Hosted Otari, OpenRouter and OpenAI do.
 - **The network file is public**, including its instructions.

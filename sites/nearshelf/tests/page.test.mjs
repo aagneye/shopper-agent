@@ -14,6 +14,7 @@ const FRIDAY_NIGHT = new Date("2026-11-20T17:15:00Z");
 globalThis.document = StubDocument.fromHtml(await readFile(new URL("../index.html", import.meta.url), "utf8"), `${BASE}/`);
 globalThis.Option = StubOption;
 const { App } = await import("../js/app.js");
+const { timePassed } = await import("../js/clock.js");
 const { composeRequest } = await import("../js/search.js");
 App.clock = () => FRIDAY_NIGHT;
 App.page.refresh();
@@ -93,7 +94,7 @@ test("a blank need is refused", () => {
 
 test("reads leave the page as it was", () => {
   const before = document.snapshot();
-  const found = App.page.findShops({ category: "pharmacy" });
+  const found = App.page.findShops({ category: "pharmacy", medicines: [{ name: "ORS", amount: "2 sachets" }] });
   assert.equal(found.ok, true);
   assert.deepEqual(found.shops.map((shop) => shop.askWith), ["shanti_medical", "night_owl_pharmacy"]);
   assert.equal(found.from, "Neem Chowk Metro, Gate 2");
@@ -119,6 +120,30 @@ test("a saved hold appears in My holds", () => {
   assert.equal(document.getElementById("holds-empty").hidden, true);
   assert.match(textOf(document.getElementById("holds")), /H-4821/);
   assert.deepEqual(App.page.getState().holds.map((hold) => [hold.shop, hold.code]), [["Shanti Medical", "H-4821"]]);
+});
+
+test("a hold is kept from the shop's own result, once, and shows as expired after its time", () => {
+  const { page } = App;
+  const shop = page.place("night_owl_pharmacy");
+  const result = { ok: true, code: "H-9421", until: "12:45 am", pickup: "11:15 pm", summary: "1 × ORS (21 g) held at Night Owl Pharmacy until 12:45 am." };
+  assert.equal(page.heardHold(shop, "request_hold", { ok: false, reason: "cancelled" }), null);
+  assert.equal(page.heardHold(shop, "check_stock", result), null);
+  assert.equal(page.heardHold(undefined, "request_hold", result), null);
+  assert.match(page.heardHold(shop, "request_hold", result), /^Hold code H-9421 at Night Owl Pharmacy: 1 × ORS \(21 g\)\./);
+  assert.equal(page.heardHold(shop, "request_hold", result), null);
+  const shown = textOf(document.getElementById("holds").children[0]);
+  assert.match(shown, /H-9421/);
+  assert.match(shown, /pickup by 11:15 pm · held until 12:45 am/);
+  page.said = ["Please hold one ORS"];
+  assert.equal(page.holdMissing(), null);
+  page.heldNow = 0;
+  assert.match(page.holdMissing(), /^Nothing was held/);
+  page.said = ["How do holds work?"];
+  assert.equal(page.holdMissing(), null);
+  const given = "2026-11-20T17:15:00Z";
+  assert.equal(timePassed("12:45 am", given, new Date("2026-11-20T19:14:00Z"), "Asia/Kolkata"), false);
+  assert.equal(timePassed("12:45 am", given, new Date("2026-11-20T19:15:00Z"), "Asia/Kolkata"), true);
+  assert.equal(timePassed("", given, new Date(), "Asia/Kolkata"), false);
 });
 
 test("the garage form saves a vehicle", () => {
@@ -173,6 +198,6 @@ test("the page says plainly what goes to the AI provider and what shops get", as
 });
 
 test("the search form's request names the item and the kind of shop", () => {
-  assert.equal(composeRequest({ need: "ORS sachets", category: "pharmacy", openNow: true }), "Medicine: ORS sachets. Ask pharmacies that are open now whether they have it, and compare their answers.");
-  assert.equal(composeRequest({ need: " clutch cable  for my scooter ", category: "auto_parts", openNow: false }), "Vehicle part: clutch cable for my scooter. Ask parts dealers whether they have it, and compare their answers.");
+  assert.equal(composeRequest({ need: "ORS sachets", category: "pharmacy", openNow: true }), "Medicine: ORS sachets.");
+  assert.equal(composeRequest({ need: " clutch cable  for my scooter ", category: "auto_parts", openNow: false }), "Vehicle part: clutch cable for my scooter. Include closed shops.");
 });

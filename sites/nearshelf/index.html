@@ -25,6 +25,8 @@
       <span>NearShelf</span>
     </a>
     <nav class="topnav" aria-label="Page sections">
+      <a href="#scan-open">Scan prescription</a>
+      <a href="#my-holds">My holds</a>
       <a href="#how">How it works</a>
       <a href="#shops-panel">Shops</a>
       <a href="#details">Your details</a>
@@ -44,6 +46,8 @@
       <form id="need-form" class="need-form" novalidate>
         <label class="need-label" for="need-input">What do you need?</label>
         <input id="need-input" name="need" type="text" maxlength="120" autocomplete="off" placeholder="e.g. children's paracetamol syrup">
+        <label class="visually-hidden" for="need-amount">How much do you need?</label>
+        <input id="need-amount" name="amount" type="text" maxlength="80" autocomplete="off" placeholder="How much? e.g. 14 tablets, or 2 times a day for 1 week">
         <div class="need-row">
           <label class="visually-hidden" for="need-category">Kind of shop</label>
           <select id="need-category" name="category">
@@ -60,6 +64,27 @@
           <button id="chip-ors" class="chip" type="button">ORS sachets</button>
           <button id="chip-clutch" class="chip" type="button">Clutch cable for my scooter</button>
         </div>
+        <div class="scan">
+          <button id="scan-open" class="primary" type="button" aria-expanded="false" aria-controls="scan-panel">Scan prescription</button>
+          <div id="scan-panel" hidden>
+            <p id="scan-note" class="small muted"></p>
+            <button id="scan-settings" class="secondary" type="button" hidden>Add your AI key</button>
+            <label id="scan-pick" class="scan-pick">
+              <span>Photo of the prescription</span>
+              <input id="scan-file" type="file" accept="image/jpeg,image/png,image/webp">
+            </label>
+            <p id="scan-status" class="form-status" role="status"></p>
+            <div id="scan-review" hidden>
+              <ul id="scan-lines" class="scan-lines"></ul>
+              <p class="small muted">"How many" is copied from the paper, so it may mean tablets. Shops sell packs. NearShelf only copies names: ask your doctor or pharmacist about medicines and doses.</p>
+              <div class="scan-actions">
+                <button id="scan-use" class="primary" type="button" disabled>Save to My list</button>
+                <button id="scan-clear" class="secondary" type="button">Discard</button>
+              </div>
+            </div>
+            <button id="scan-ask" class="primary" type="button" hidden>Ask nearby pharmacies</button>
+          </div>
+        </div>
       </form>
     </section>
 
@@ -67,8 +92,8 @@
       <div class="col-main">
         <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
           <h2 id="assistant-heading">Ask NearShelf</h2>
-          <p>Your agent shortlists open shops, asks each one's own agent after you agree, then puts the answers on the results board.</p>
-          <p class="assistant-note">Your messages, and the details the assistant reads from this page (your spot, vehicles, list and holds), go to the AI provider you choose in the settings below. Your agent is told to send shops only the item, and you see each request on a card before it goes. Holds are confirmed in the shop's own window.</p>
+          <p>Your agent shortlists open shops, asks their own agents one at a time until one has your item, then puts the answers on the results board.</p>
+          <p class="assistant-note">Your messages, and the details the assistant reads from this page (your spot, vehicles, list and holds), go to the AI provider you choose in the settings below. Your agent is told to send shops only the item, and the chat shows each shop's name while it is asked. Holds are confirmed in the shop's own window.</p>
           <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
           <div id="agent-app">
             <div data-ns-slot="header"></div>
@@ -82,16 +107,16 @@
       </div>
 
       <aside class="col-side" aria-label="Results and shops">
+        <section id="my-holds" class="panel" aria-labelledby="holds-heading">
+          <h2 id="holds-heading">My holds</h2>
+          <p id="holds-empty" class="muted">No holds yet. Hold codes are kept here. Ask your agent to hold an item at a shop that has it.</p>
+          <ul id="holds" class="holds"></ul>
+        </section>
+
         <section class="panel results-panel" aria-labelledby="results-heading">
           <h2 id="results-heading">Results</h2>
           <p id="results-summary" class="muted">Ask for something and your agent's comparison appears here.</p>
           <ol id="results" class="cards"></ol>
-        </section>
-
-        <section class="panel" aria-labelledby="holds-heading">
-          <h2 id="holds-heading">My holds</h2>
-          <p id="holds-empty" class="muted">No holds yet. Ask your agent to hold an item at a shop that has it.</p>
-          <ul id="holds" class="holds"></ul>
         </section>
 
         <section id="shops-panel" class="panel" aria-labelledby="shops-heading">
@@ -157,7 +182,7 @@
       <h2 id="how-heading">How it works</h2>
       <ol class="steps">
         <li><strong>You ask once.</strong> Your agent picks up to four open, verified shops near you from the area's places directory.</li>
-        <li><strong>It asks their agents.</strong> Each shop's own agent answers from the shop's live stock. You approve every shop it contacts, and your agent is told to send only the item.</li>
+        <li><strong>It asks their agents.</strong> Each shop's own agent answers from the shop's live stock. It asks one shop at a time without stopping you, shows each shop's name, and is told to send only the item.</li>
         <li><strong>You compare and hold.</strong> Answers land on the results board with the time stock was checked. A hold is confirmed in the shop's own window.</li>
       </ol>
       <p class="muted">NearShelf follows the <a href="https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md">open agentic web specification</a>. Its agents run in your browser, and you choose the AI provider. Read its <a href="agent-manifest.json">agent manifest</a>, its <a href="nearshelf.network.json">agent network</a> and the <a href="directory/neem-chowk.json">places directory</a>.</p>

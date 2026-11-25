@@ -96,21 +96,41 @@ export function renderResults(doc, list, summary, view) {
  * :param doc: The document.
  * :param list: The <ul> element.
  * :param empty: The "no holds" paragraph.
- * :param holds: [{id, shop, item, code, until}], newest first.
+ * :param holds: [{id, shop, item, code, until, pickup, expired, page}], newest first.
  * :param onRemove: Called with a hold id when its Remove button is pressed.
  */
 export function renderHolds(doc, list, empty, holds, onRemove) {
   empty.hidden = holds.length > 0;
   const items = holds.map((hold) => {
-    const item = el(doc, "li", "hold");
+    const item = el(doc, "li", hold.expired ? "hold is-expired" : "hold");
     const code = el(doc, "span", "hold-code", hold.code);
     const what = el(doc, "span", "hold-item", hold.item);
-    const where = el(doc, "span", "hold-where", hold.until ? `${hold.shop} · until ${hold.until}` : hold.shop);
+    const times = hold.expired
+      ? "Expired"
+      : [hold.pickup && hold.pickup !== hold.until ? `pickup by ${hold.pickup}` : "", hold.until ? `held until ${hold.until}` : ""].filter(Boolean).join(" · ");
+    const where = el(doc, "span", "hold-where", [hold.shop, times].filter(Boolean).join(" · "));
+    const tools = el(doc, "span", "hold-tools");
+    const copy = el(doc, "button", "link-button", "Copy code");
+    copy.setAttribute("type", "button");
+    copy.setAttribute("aria-label", `Copy hold code ${hold.code}`);
+    copy.addEventListener("click", async () => {
+      try {
+        await globalThis.navigator.clipboard.writeText(hold.code);
+        copy.textContent = "Copied";
+      } catch {
+        copy.textContent = "Could not copy";
+      }
+    });
+    tools.append(copy);
+    if (hold.page) {
+      tools.append(link(doc, hold.page, "Website"));
+    }
     const remove = el(doc, "button", "link-button", "Remove");
     remove.setAttribute("type", "button");
     remove.setAttribute("aria-label", `Remove hold ${hold.code} from this list`);
     remove.addEventListener("click", () => onRemove(hold.id));
-    item.append(code, what, where, remove);
+    tools.append(remove);
+    item.append(code, what, where, tools);
     return item;
   });
   list.replaceChildren(...items);
