@@ -15,6 +15,7 @@
     "serve:nearshelf": "node vendor/agentify-website/scripts/serve_site.mjs sites/nearshelf --port 8080 --open-as 127.0.0.1",
     "test:shop-kit": "node --test \"shop-kit/tests/*.test.mjs\"",
     "dev": "node tools/dev.mjs",
+    "dev:local-ai": "node tools/dev.mjs --local-ai",
     "test": "node --test \"sites/*/tests/*.test.mjs\" \"shop-kit/tests/*.test.mjs\""
   }
 }

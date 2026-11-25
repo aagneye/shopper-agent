@@ -3,11 +3,13 @@
 // directory names them. Stop them all with Ctrl+C.
 //
 // Usage: node tools/dev.mjs   (or npm run dev)
+//        node tools/dev.mjs --local-ai   (also offers one link that sets Ollama for every site)
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import directory from "../sites/nearshelf/directory/neem-chowk.json" with { type: "json" };
+import { startLocalAi } from "./local-ai.mjs";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const SERVE_SITE = "vendor/agentify-website/scripts/serve_site.mjs";
@@ -53,6 +55,10 @@ for (const site of plan()) {
   });
   children.push(child);
   console.log(`${site.name.padEnd(22)} ${site.url}`);
+}
+
+if (process.argv.includes("--local-ai")) {
+  console.log(`${"Local AI setup".padEnd(22)} ${startLocalAi()}  (open once, with a new tab)`);
 }
 
 const stopAll = () => {
